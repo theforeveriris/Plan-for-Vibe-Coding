@@ -26,7 +26,9 @@
 │   ├── 0.vibe coding 基本概念.md    # 基本概念介绍
 │   ├── 1.基本的 coding cli 环境配置.md  # 环境配置教程
 │   ├── 2.工作流.md         # VibeCoding 工作流
-│   └── 4.在IDE里使用MCP和Skills.md  # IDE 中使用 MCP 和 Skills
+│   ├── 3.工作流_如何写一套好的提示词.md  # 提示词设计指南
+│   ├── 4.在IDE里使用MCP和Skills.md  # IDE 中使用 MCP 和 Skills
+│   └── 5.注意力即生命.md     # 注意力管理策略
 ├── extended docs/         # 扩展文档目录
 │   ├── 2.a Claude Code基本斜杠命令.md  # Claude Code 命令参考
 │   ├── 4.a 常见的mcp和skills获取平台.md  # MCP 和 Skills 获取平台
