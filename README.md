@@ -29,7 +29,8 @@
 │   └── 4.在IDE里使用MCP和Skills.md  # IDE 中使用 MCP 和 Skills
 ├── extended docs/         # 扩展文档目录
 │   ├── 2.a Claude Code基本斜杠命令.md  # Claude Code 命令参考
-│   └── 4.a 常见的mcp和skills获取平台.md  # MCP 和 Skills 获取平台
+│   ├── 4.a 常见的mcp和skills获取平台.md  # MCP 和 Skills 获取平台
+│   └── 4.b 构建自己的skills.md  # 构建自己的 Skills
 └── img/                  # 图片资源
 ```
 
