@@ -2,6 +2,13 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getKeys } from '../../lib/db/queries';
 
+// CORS 响应头
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Methods': 'GET, OPTIONS',
+  'Access-Control-Allow-Headers': 'Content-Type',
+};
+
 export async function GET(request: NextRequest) {
   try {
     const searchParams = request.nextUrl.searchParams;
@@ -22,12 +29,19 @@ export async function GET(request: NextRequest) {
       total,
       page,
       pageSize,
-    });
+    }, { headers: corsHeaders });
   } catch (error) {
     console.error('Get keys error:', error);
     return NextResponse.json(
       { success: false, error: 'Internal server error' },
-      { status: 500 }
+      { status: 500, headers: corsHeaders }
     );
   }
+}
+
+export async function OPTIONS() {
+  return new Response(null, {
+    status: 204,
+    headers: corsHeaders,
+  });
 }

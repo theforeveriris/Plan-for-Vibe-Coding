@@ -7,6 +7,13 @@ import { initDatabase } from '../../../lib/db/schema';
 // 初始化数据库
 initDatabase();
 
+// CORS 响应头
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Methods': 'POST, OPTIONS',
+  'Access-Control-Allow-Headers': 'Content-Type',
+};
+
 const StartMinerSchema = z.object({
   patternType: z.enum(['consecutive', 'repeating', 'palindrome', 'special_date', 'custom_regex', 'leading_zeros']),
   patternConfig: z.object({
@@ -30,18 +37,25 @@ export async function POST(request: NextRequest) {
       data.threads
     );
 
-    return NextResponse.json({ success: true, taskId });
+    return NextResponse.json({ success: true, taskId }, { headers: corsHeaders });
   } catch (error) {
     if (error instanceof z.ZodError) {
       return NextResponse.json(
         { success: false, error: 'Invalid parameters', details: error.errors },
-        { status: 400 }
+        { status: 400, headers: corsHeaders }
       );
     }
     console.error('Miner start error:', error);
     return NextResponse.json(
       { success: false, error: 'Internal server error' },
-      { status: 500 }
+      { status: 500, headers: corsHeaders }
     );
   }
+}
+
+export async function OPTIONS() {
+  return new Response(null, {
+    status: 204,
+    headers: corsHeaders,
+  });
 }

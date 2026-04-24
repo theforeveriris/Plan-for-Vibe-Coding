@@ -18,7 +18,8 @@
 
 **解决方案**：
 - 前端实现自动重连机制
-- 定期发送 keep-alive comment（如 `// keep-alive\n\n`）
+- 定期发送 keep-alive comment（如 `: keep-alive\n\n`）
+- 使用指数退避策略控制重连频率
 
 ### Q3: SQLite 数据库锁定
 **问题**：并发写入时报 "database is locked"
@@ -43,3 +44,71 @@ controller.enqueue(encoder.encode(`data: ${JSON.stringify(data)}\n\n`));
 const lines = event.data.split('\n');
 const data = JSON.parse(lines[0]);
 ```
+
+### Q5: 网络错误: TypeError: Failed to fetch
+**问题**：前端频繁出现网络错误，API 请求失败
+
+**原因**：
+1. **CORS 跨域问题**：后端未配置 CORS 响应头，浏览器拦截跨域请求
+2. **请求超时**：fetch 默认没有超时，网络异常时请求会挂起
+3. **SSE 无重连**：EventSource 断开后不会自动恢复
+4. **后端服务未启动**：前端在后台服务未运行时发起请求
+
+**解决方案**：
+1. **后端配置 CORS**：所有 API 路由添加跨域响应头
+   ```typescript
+   const corsHeaders = {
+     'Access-Control-Allow-Origin': '*',
+     'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+     'Access-Control-Allow-Headers': 'Content-Type',
+   };
+   ```
+
+2. **前端添加超时处理**：封装带超时的 fetch
+   ```typescript
+   async function fetchWithTimeout(url, options = {}, timeoutMs = 10000) {
+     const controller = new AbortController();
+     const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+     try {
+       const response = await fetch(url, { ...options, signal: controller.signal });
+       clearTimeout(timeoutId);
+       return response;
+     } catch (error) {
+       clearTimeout(timeoutId);
+       if (error.name === 'AbortError') {
+         throw new Error('请求超时，请检查后端服务是否正常运行');
+       }
+       throw error;
+     }
+   }
+   ```
+
+3. **SSE 自动重连**：实现指数退避重连机制
+   ```typescript
+   let reconnectCount = 0;
+   const maxReconnects = 5;
+
+   eventSource.onerror = () => {
+     if (reconnectCount < maxReconnects) {
+       reconnectCount++;
+       const delay = Math.min(1000 * Math.pow(2, reconnectCount), 30000);
+       setTimeout(() => startSSEConnection(), delay);
+     }
+   };
+   ```
+
+4. **错误信息优化**：区分超时、CORS、网络断开等不同错误类型
+
+## 网络请求最佳实践
+
+### 前端
+- 所有 API 请求使用封装后的 `fetchWithTimeout`
+- 错误处理区分类型，提供用户友好的提示
+- SSE 连接实现自动重连机制
+- 页面加载时检查后端服务可用性
+
+### 后端
+- 所有 API 路由必须配置 CORS 响应头
+- 支持 OPTIONS 预检请求
+- SSE 端点添加 keep-alive 机制
+- 异常处理避免泄露敏感信息
