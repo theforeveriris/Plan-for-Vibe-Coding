@@ -21,10 +21,11 @@ AI 在回答前必须：
 7. [2026-04-24] 修复 task-manager.ts 导入路径错误（`src/backend/app/lib/task-manager.ts`）
 8. [2026-04-24] 替换 better-sqlite3 为文件系统存储（`src/backend/app/lib/db/`）
 9. [2026-04-24] 成功启动前后端服务并验证 API 正常运行
+10. [2026-04-24] 实现后端服务 URL 动态配置功能（`src/frontend/src/components/ConfigModal.vue`）
 
 ## 当前代码状态
 - 分支：`main`
-- 最后提交：`feat: complete PGP vanity key miner project`
+- 最后提交：`feat: add backend URL configuration feature`
 - 未提交更改：无
 
 ## 必须遵守的规则（精简版）
@@ -32,6 +33,7 @@ AI 在回答前必须：
 2. Worker线程必须处理好错误和内存管理
 3. 私钥不存储，仅一次性返回
 4. 使用 SSE 推送进度，不是 WebSocket
+5. 后端服务 URL 必须可配置，默认值为 http://localhost:3000
 
 ## 当前环境
 - Node.js: 20.x

@@ -3,21 +3,29 @@ import { defineStore } from 'pinia'
 import { ref } from 'vue'
 import type { SpecialKey } from '../types'
 
-const API_BASE = 'http://localhost:3000'
+// 从 localStorage 加载 API URL，默认值为 http://localhost:3000
+const getApiBase = (): string => {
+  return localStorage.getItem('backendUrl') || 'http://localhost:3000'
+}
 
 export const useKeysStore = defineStore('keys', () => {
   // 状态
   const keys = ref<SpecialKey[]>([])
   const loading = ref(false)
   const error = ref<string | null>(null)
+  const apiBase = ref(getApiBase())
 
   // 方法
+  function updateApiUrl(url: string) {
+    apiBase.value = url
+  }
+
   async function fetchKeys() {
     loading.value = true
     error.value = null
 
     try {
-      const response = await fetch(`${API_BASE}/api/keys`)
+      const response = await fetch(`${apiBase.value}/api/keys`)
       const data = await response.json()
 
       if (data.success) {
@@ -44,6 +52,8 @@ export const useKeysStore = defineStore('keys', () => {
     keys,
     loading,
     error,
+    apiBase,
+    updateApiUrl,
     fetchKeys,
     addKey,
     clearKeys

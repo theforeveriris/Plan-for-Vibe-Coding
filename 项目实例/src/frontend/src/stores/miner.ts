@@ -8,7 +8,10 @@ import type {
   SpecialKey 
 } from '../types'
 
-const API_BASE = 'http://localhost:3000'
+// 从 localStorage 加载 API URL，默认值为 http://localhost:3000
+const getApiBase = (): string => {
+  return localStorage.getItem('backendUrl') || 'http://localhost:3000'
+}
 
 export const useMinerStore = defineStore('miner', () => {
   // 状态
@@ -19,6 +22,7 @@ export const useMinerStore = defineStore('miner', () => {
   const matches = ref<SpecialKey[]>([])
   const logs = ref<Array<{ time: Date; type: 'info' | 'match' | 'error'; message: string }>>([])
   const hashrateHistory = ref<number[]>(Array(60).fill(0))
+  const apiBase = ref(getApiBase())
   
   // SSE 连接
   let sseConnection: EventSource | null = null
@@ -27,9 +31,13 @@ export const useMinerStore = defineStore('miner', () => {
   const currentTask = computed<MiningTask | null>(() => null) // 简化实现
 
   // 方法
+  function updateApiUrl(url: string) {
+    apiBase.value = url
+  }
+
   async function startMining(request: StartMinerRequest) {
     try {
-      const response = await fetch(`${API_BASE}/api/miner/start`, {
+      const response = await fetch(`${apiBase.value}/api/miner/start`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
@@ -58,7 +66,7 @@ export const useMinerStore = defineStore('miner', () => {
     if (!taskId.value) return
 
     try {
-      const response = await fetch(`${API_BASE}/api/miner/stop/${taskId.value}`, {
+      const response = await fetch(`${apiBase.value}/api/miner/stop/${taskId.value}`, {
         method: 'POST'
       })
 
@@ -82,7 +90,7 @@ export const useMinerStore = defineStore('miner', () => {
   }
 
   function startSSEConnection(taskId: string) {
-    sseConnection = new EventSource(`${API_BASE}/api/miner/stream/${taskId}`)
+    sseConnection = new EventSource(`${apiBase.value}/api/miner/stream/${taskId}`)
 
     sseConnection.onmessage = (event) => {
       try {
