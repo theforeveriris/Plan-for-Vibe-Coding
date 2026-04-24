@@ -1,0 +1,48 @@
+# 系统上下文图（System Context）
+
+## L1: 系统上下文
+
+```mermaid
+graph TD
+    User[用户] -->|配置规则| Frontend[Vue3 前端]
+    User -->|查看进度| Frontend
+    Frontend -->|API调用| Backend[Next.js API]
+    Backend -->|启动任务| Worker[Worker线程]
+    Worker -->|生成密钥| PGP[PGP库]
+    Worker -->|推送进度| Backend
+    Backend -->|SSE| Frontend
+    Backend -->|存储| SQLite[(SQLite)]
+    Worker -->|发现密钥| Backend
+    Backend -->|返回公钥| Frontend
+```
+
+## L2: 容器图
+
+```mermaid
+graph TD
+    subgraph 前端容器
+        Vue[Vue 3 App]
+        Pinia[Pinia Store]
+        Chart[Chart.js]
+    end
+
+    subgraph 后端容器
+        NextJS[Next.js API]
+        RouteHandler[API Routes]
+        SSEHandler[SSE Handler]
+        WorkerPool[Worker Pool]
+        MiningWorker[Mining Worker]
+    end
+
+    subgraph 数据层
+        SQLite[(SQLite)]
+    end
+
+    RouteHandler -->|创建任务| WorkerPool
+    SSEHandler -->|推送| WorkerPool
+    WorkerPool -->|执行| MiningWorker
+    MiningWorker -->|读写| SQLite
+    Vue -->|HTTP/SSE| NextJS
+    Pinia -->|状态| Vue
+    Chart -->|图表| Vue
+```
