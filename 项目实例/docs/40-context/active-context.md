@@ -7,18 +7,20 @@ AI 在回答前必须：
 3. 回复开头声明："已加载活跃上下文"
 
 ## 当前任务
-**T001: PGP密钥生成核心逻辑**（进行中）
-- 下一步：实现 `generator.ts` 中的密钥生成函数
+**T001: PGP密钥生成核心逻辑**（已完成）
+- 下一步：开始 T002 筛选规则实现
 - 阻塞：无
 
 ## 最近变更（Last 3 Changes）
-1. [2026-04-20] 项目初始化，创建基础目录结构
-2. [2026-04-20] 安装 node-openpgp 依赖
-3. [2026-04-20] 创建文档体系
+1. [2026-04-24] 完成 PGP 密钥生成核心逻辑（`src/backend/app/lib/pgp/generator.ts`）
+2. [2026-04-24] 完成筛选规则实现（`src/backend/app/lib/pgp/patterns.ts`）
+3. [2026-04-24] 完成数据库存储实现（`src/backend/app/lib/db/`）
+4. [2026-04-24] 完成 API 路由实现（`src/backend/app/api/`）
+5. [2026-04-24] 完成前端界面实现（`src/frontend/`）
 
 ## 当前代码状态
 - 分支：`main`
-- 最后提交：`initial commit - project structure`
+- 最后提交：`feat: complete PGP vanity key miner project`
 - 未提交更改：无
 
 ## 必须遵守的规则（精简版）

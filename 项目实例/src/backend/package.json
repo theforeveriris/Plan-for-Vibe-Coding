@@ -1,0 +1,23 @@
+{
+  "name": "pgp-vanity-miner-backend",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint"
+  },
+  "dependencies": {
+    "next": "^14.2.3",
+    "node-openpgp": "^6.0.0",
+    "better-sqlite3": "^9.4.3",
+    "zod": "^3.23.6",
+    "uuid": "^9.0.1"
+  },
+  "devDependencies": {
+    "@types/node": "^20.14.2",
+    "@types/uuid": "^9.0.8",
+    "typescript": "^5.4.5"
+  }
+}
