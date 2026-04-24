@@ -223,225 +223,304 @@ function stopMining() {
 
 <style scoped>
 .miner-control {
-  background: rgba(0, 0, 0, 0.5);
-  border: 1px solid rgba(0, 240, 255, 0.3);
-  border-radius: 8px;
-  padding: 16px;
+  background: transparent;
+  padding: 0;
   overflow-y: auto;
+  height: 100%;
 }
 
 .control-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 16px;
-}
-
-.control-header h3 {
-  margin: 0;
-  color: #00f0ff;
-  font-size: 16px;
+  margin-bottom: 20px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid rgba(148, 163, 184, 0.1);
 }
 
 .status-badge {
-  padding: 4px 12px;
-  background: rgba(255, 255, 255, 0.1);
-  border-radius: 12px;
-  font-size: 12px;
+  padding: 6px 16px;
+  background: rgba(148, 163, 184, 0.1);
+  border-radius: 16px;
+  font-size: 13px;
+  font-weight: 500;
   color: rgba(255, 255, 255, 0.7);
+  transition: all 0.2s ease;
 }
 
 .status-badge.running {
-  background: rgba(0, 240, 255, 0.2);
-  color: #00f0ff;
+  background: rgba(52, 211, 153, 0.2);
+  color: #34d399;
+  box-shadow: 0 0 12px rgba(52, 211, 153, 0.3);
 }
 
 .config-btn {
-  padding: 4px 8px;
-  background: rgba(255, 255, 255, 0.1);
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  border-radius: 4px;
-  color: rgba(255, 255, 255, 0.7);
+  padding: 8px 12px;
+  background: rgba(59, 130, 246, 0.1);
+  border: 1px solid rgba(59, 130, 246, 0.2);
+  border-radius: 8px;
+  color: #93c5fd;
   cursor: pointer;
-  font-size: 12px;
+  font-size: 14px;
   line-height: 1;
+  transition: all 0.2s ease;
 }
 
 .config-btn:hover {
-  background: rgba(255, 255, 255, 0.2);
+  background: rgba(59, 130, 246, 0.2);
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(59, 130, 246, 0.3);
 }
 
 .rules-section {
-  margin-bottom: 16px;
+  margin-bottom: 24px;
 }
 
 .section-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 12px;
+  margin-bottom: 16px;
 }
 
 .section-header h4 {
   margin: 0;
   color: rgba(255, 255, 255, 0.9);
-  font-size: 14px;
+  font-size: 15px;
+  font-weight: 600;
 }
 
 .add-rule-btn {
-  padding: 4px 12px;
-  background: rgba(0, 240, 255, 0.2);
-  border: 1px solid rgba(0, 240, 255, 0.3);
-  border-radius: 4px;
-  color: #00f0ff;
+  padding: 6px 16px;
+  background: rgba(59, 130, 246, 0.2);
+  border: 1px solid rgba(59, 130, 246, 0.3);
+  border-radius: 8px;
+  color: #3b82f6;
   cursor: pointer;
-  font-size: 12px;
+  font-size: 13px;
+  font-weight: 500;
+  transition: all 0.2s ease;
 }
 
 .add-rule-btn:hover {
-  background: rgba(0, 240, 255, 0.3);
+  background: rgba(59, 130, 246, 0.3);
+  transform: translateY(-1px);
 }
 
 .rule-item {
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 6px;
-  padding: 12px;
-  margin-bottom: 8px;
+  background: rgba(30, 41, 59, 0.6);
+  border: 1px solid rgba(148, 163, 184, 0.1);
+  border-radius: 10px;
+  padding: 16px;
+  margin-bottom: 12px;
+  transition: all 0.2s ease;
+}
+
+.rule-item:hover {
+  border-color: rgba(59, 130, 246, 0.3);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
 }
 
 .rule-header {
   display: flex;
   align-items: center;
-  gap: 8px;
-  margin-bottom: 8px;
+  gap: 12px;
+  margin-bottom: 12px;
 }
 
 .rule-enable {
-  width: 16px;
-  height: 16px;
+  width: 18px;
+  height: 18px;
   cursor: pointer;
+  accent-color: #3b82f6;
 }
 
 .rule-type {
   flex: 1;
-  padding: 6px 8px;
-  background: rgba(0, 0, 0, 0.3);
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  border-radius: 4px;
+  padding: 8px 12px;
+  background: rgba(15, 23, 42, 0.8);
+  border: 1px solid rgba(148, 163, 184, 0.1);
+  border-radius: 8px;
   color: rgba(255, 255, 255, 0.9);
-  font-size: 13px;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.rule-type:hover {
+  border-color: rgba(59, 130, 246, 0.3);
 }
 
 .rule-color {
-  width: 32px;
-  height: 24px;
-  border: none;
-  border-radius: 4px;
+  width: 40px;
+  height: 32px;
+  border: 2px solid rgba(148, 163, 184, 0.2);
+  border-radius: 8px;
   cursor: pointer;
   background: none;
+  transition: all 0.2s ease;
+}
+
+.rule-color:hover {
+  border-color: rgba(59, 130, 246, 0.5);
+  transform: scale(1.05);
 }
 
 .remove-rule-btn {
-  width: 24px;
-  height: 24px;
-  background: rgba(255, 107, 107, 0.2);
-  border: 1px solid rgba(255, 107, 107, 0.3);
-  border-radius: 4px;
-  color: #ff6b6b;
+  width: 32px;
+  height: 32px;
+  background: rgba(239, 68, 68, 0.1);
+  border: 1px solid rgba(239, 68, 68, 0.2);
+  border-radius: 8px;
+  color: #ef4444;
   cursor: pointer;
-  font-size: 16px;
+  font-size: 18px;
+  font-weight: 500;
   line-height: 1;
   display: flex;
   align-items: center;
   justify-content: center;
+  transition: all 0.2s ease;
 }
 
 .remove-rule-btn:hover {
-  background: rgba(255, 107, 107, 0.3);
+  background: rgba(239, 68, 68, 0.2);
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(239, 68, 68, 0.3);
 }
 
 .rule-params {
-  padding-left: 24px;
+  padding-left: 30px;
+  margin-top: 8px;
 }
 
 .rule-params label {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 12px;
   color: rgba(255, 255, 255, 0.7);
-  font-size: 13px;
+  font-size: 14px;
+  font-weight: 500;
 }
 
 .param-input {
-  padding: 4px 8px;
-  background: rgba(0, 0, 0, 0.3);
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  border-radius: 4px;
+  padding: 8px 12px;
+  background: rgba(15, 23, 42, 0.8);
+  border: 1px solid rgba(148, 163, 184, 0.1);
+  border-radius: 8px;
   color: rgba(255, 255, 255, 0.9);
-  font-size: 13px;
-  width: 120px;
+  font-size: 14px;
+  width: 140px;
+  transition: all 0.2s ease;
+}
+
+.param-input:focus {
+  outline: none;
+  border-color: rgba(59, 130, 246, 0.5);
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
 }
 
 .threads-section {
-  margin-bottom: 16px;
+  margin-bottom: 24px;
+  padding: 16px;
+  background: rgba(30, 41, 59, 0.4);
+  border-radius: 10px;
+  border: 1px solid rgba(148, 163, 184, 0.1);
 }
 
 .threads-section label {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 12px;
   color: rgba(255, 255, 255, 0.9);
-  font-size: 14px;
+  font-size: 15px;
+  font-weight: 500;
 }
 
 .threads-input {
-  padding: 4px 8px;
-  background: rgba(0, 0, 0, 0.3);
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  border-radius: 4px;
+  padding: 8px 12px;
+  background: rgba(15, 23, 42, 0.8);
+  border: 1px solid rgba(148, 163, 184, 0.1);
+  border-radius: 8px;
   color: rgba(255, 255, 255, 0.9);
   font-size: 14px;
-  width: 60px;
+  width: 80px;
+  transition: all 0.2s ease;
+}
+
+.threads-input:focus {
+  outline: none;
+  border-color: rgba(59, 130, 246, 0.5);
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
 }
 
 .control-buttons {
   display: flex;
-  gap: 12px;
+  gap: 16px;
+  padding-top: 20px;
+  border-top: 1px solid rgba(148, 163, 184, 0.1);
 }
 
 .start-btn, .stop-btn {
   flex: 1;
-  padding: 10px 16px;
+  padding: 12px 20px;
   border: none;
-  border-radius: 6px;
+  border-radius: 10px;
   font-size: 14px;
+  font-weight: 600;
   cursor: pointer;
-  transition: opacity 0.2s;
+  transition: all 0.2s ease;
+  position: relative;
+  overflow: hidden;
 }
 
 .start-btn {
-  background: rgba(0, 240, 255, 0.2);
-  color: #00f0ff;
-  border: 1px solid rgba(0, 240, 255, 0.3);
+  background: linear-gradient(135deg, rgba(59, 130, 246, 0.2), rgba(37, 99, 235, 0.2));
+  color: #3b82f6;
+  border: 1px solid rgba(59, 130, 246, 0.3);
 }
 
 .start-btn:hover:not(:disabled) {
-  background: rgba(0, 240, 255, 0.3);
+  background: linear-gradient(135deg, rgba(59, 130, 246, 0.3), rgba(37, 99, 235, 0.3));
+  transform: translateY(-2px);
+  box-shadow: 0 4px 16px rgba(59, 130, 246, 0.4);
 }
 
 .stop-btn {
-  background: rgba(255, 107, 107, 0.2);
-  color: #ff6b6b;
-  border: 1px solid rgba(255, 107, 107, 0.3);
+  background: linear-gradient(135deg, rgba(239, 68, 68, 0.2), rgba(220, 38, 38, 0.2));
+  color: #ef4444;
+  border: 1px solid rgba(239, 68, 68, 0.3);
 }
 
 .stop-btn:hover:not(:disabled) {
-  background: rgba(255, 107, 107, 0.3);
+  background: linear-gradient(135deg, rgba(239, 68, 68, 0.3), rgba(220, 38, 38, 0.3));
+  transform: translateY(-2px);
+  box-shadow: 0 4px 16px rgba(239, 68, 68, 0.4);
 }
 
 .start-btn:disabled, .stop-btn:disabled {
   opacity: 0.5;
   cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+/* 滚动条样式 */
+.miner-control::-webkit-scrollbar {
+  width: 6px;
+}
+
+.miner-control::-webkit-scrollbar-track {
+  background: rgba(15, 23, 42, 0.5);
+  border-radius: 3px;
+}
+
+.miner-control::-webkit-scrollbar-thumb {
+  background: rgba(148, 163, 184, 0.3);
+  border-radius: 3px;
+}
+
+.miner-control::-webkit-scrollbar-thumb:hover {
+  background: rgba(148, 163, 184, 0.5);
 }
 </style>
