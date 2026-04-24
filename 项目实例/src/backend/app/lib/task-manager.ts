@@ -52,7 +52,7 @@ class TaskManager {
   }
 
   private startWorker(taskId: string, pattern: PatternConfig) {
-    const workerPath = path.join(__dirname, '../../workers/mining.worker.js');
+    const workerPath = path.join(__dirname, '../../workers/mining.worker.ts');
     const worker = new Worker(workerPath, {
       workerData: { taskId, pattern }
     });

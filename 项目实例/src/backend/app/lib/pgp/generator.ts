@@ -1,5 +1,5 @@
 // PGP 密钥生成核心逻辑
-import * as openpgp from 'node-openpgp';
+import * as openpgp from 'openpgp';
 import type { KeyPair } from './types';
 
 /**

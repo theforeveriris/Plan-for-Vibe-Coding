@@ -1,6 +1,6 @@
 // 获取密钥列表
 import { NextRequest, NextResponse } from 'next/server';
-import { getKeys } from '../../../lib/db/queries';
+import { getKeys } from '../../lib/db/queries';
 
 export async function GET(request: NextRequest) {
   try {
