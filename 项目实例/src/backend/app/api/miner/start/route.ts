@@ -1,8 +1,8 @@
 // 启动挖掘任务
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
-import { taskManager } from '../../lib/task-manager';
-import { initDatabase } from '../../lib/db/schema';
+import { taskManager } from '../../../lib/task-manager';
+import { initDatabase } from '../../../lib/db/schema';
 
 // 初始化数据库
 initDatabase();

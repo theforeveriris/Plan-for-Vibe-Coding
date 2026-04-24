@@ -3,7 +3,7 @@ import { v4 as uuidv4 } from 'uuid';
 import { Worker } from 'worker_threads';
 import path from 'path';
 import type { MiningTask, PatternConfig, KeyPair, SSEMessage } from '../pgp/types';
-import { createTask, updateTaskProgress, stopTask } from '../db/queries';
+import { createTask, updateTaskProgress, stopTask } from './db/queries';
 
 interface MiningWorker {
   worker: Worker;
