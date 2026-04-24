@@ -1,9 +1,5 @@
 <template>
   <div class="miner-terminal">
-    <div class="terminal-header">
-      <h3>实时终端</h3>
-      <button @click="clearLogs" class="clear-btn">清空</button>
-    </div>
     <div class="terminal-content" ref="terminalContent">
       <div
         v-for="(log, index) in logs"
@@ -70,39 +66,13 @@ watch(
   border: 1px solid rgba(0, 240, 255, 0.3);
   border-radius: 8px;
   overflow: hidden;
-}
-
-.terminal-header {
+  height: 100%;
   display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 12px 16px;
-  background: rgba(0, 240, 255, 0.1);
-  border-bottom: 1px solid rgba(0, 240, 255, 0.3);
-}
-
-.terminal-header h3 {
-  margin: 0;
-  color: #00f0ff;
-  font-size: 14px;
-}
-
-.clear-btn {
-  padding: 4px 12px;
-  background: rgba(255, 255, 255, 0.1);
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  border-radius: 4px;
-  color: rgba(255, 255, 255, 0.7);
-  cursor: pointer;
-  font-size: 12px;
-}
-
-.clear-btn:hover {
-  background: rgba(255, 255, 255, 0.2);
+  flex-direction: column;
 }
 
 .terminal-content {
-  height: 300px;
+  flex: 1;
   overflow-y: auto;
   padding: 12px 16px;
   font-family: 'Courier New', monospace;

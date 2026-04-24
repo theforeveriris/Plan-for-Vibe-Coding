@@ -12,6 +12,10 @@
 - 重构 `Dashboard.vue` 布局，使用 TabContainer 组件：
   - 控制面板 + 实时终端 + 已发现的特殊密钥 → 合并为单个标签页容器（左侧面板）
   - Hashrate 趋势 + Hashrate 监控 → 合并为标签页容器（右侧面板）
+- 精简 UI，移除冗余标题和 Header：
+  - `App.vue` 移除顶部 `<header>`，Dashboard 占满全屏（`height: 100vh`）
+  - `MinerControl.vue` 移除 `<h3>控制面板</h3>` 标题
+  - `MinerTerminal.vue` 移除 `<div class="terminal-header">` 标题栏
 - 优化 `StatsPanel.vue`，支持详细模式显示规则统计信息
 - 增强 `MinerTerminal.vue`，每条记录显示密钥指纹
 - 增强 `KeyCard.vue`，支持按规则类型高亮显示

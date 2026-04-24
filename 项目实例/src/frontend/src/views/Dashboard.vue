@@ -91,7 +91,7 @@ const minerStore = useMinerStore()
   grid-template-columns: 400px 1fr;
   gap: 24px;
   padding: 24px;
-  height: calc(100vh - 80px);
+  height: 100vh;
 }
 
 .left-panel {

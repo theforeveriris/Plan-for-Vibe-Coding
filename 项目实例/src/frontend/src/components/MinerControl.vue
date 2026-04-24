@@ -1,10 +1,12 @@
 <template>
   <div class="miner-control">
     <div class="control-header">
-      <h3>控制面板</h3>
       <div class="status-badge" :class="{ running: isRunning }">
         {{ isRunning ? '运行中' : '已停止' }}
       </div>
+      <button @click="showConfig" class="config-btn" title="配置">
+        ⚙️
+      </button>
     </div>
 
     <!-- 规则列表 -->
@@ -153,12 +155,17 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref, computed, inject } from 'vue'
 import { useMinerStore } from '../stores/miner'
 import type { PatternRule } from '../types'
 
 const minerStore = useMinerStore()
 const isRunning = minerStore.isRunning
+
+// 注入配置按钮显示函数
+const showConfig = inject<() => void>('showConfig', () => {
+  console.warn('showConfig not provided')
+})
 
 // 生成唯一ID
 function generateId(): string {
@@ -247,6 +254,21 @@ function stopMining() {
 .status-badge.running {
   background: rgba(0, 240, 255, 0.2);
   color: #00f0ff;
+}
+
+.config-btn {
+  padding: 4px 8px;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 4px;
+  color: rgba(255, 255, 255, 0.7);
+  cursor: pointer;
+  font-size: 12px;
+  line-height: 1;
+}
+
+.config-btn:hover {
+  background: rgba(255, 255, 255, 0.2);
 }
 
 .rules-section {
