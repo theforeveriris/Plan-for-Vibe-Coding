@@ -7,7 +7,7 @@ import type { PatternConfig, MatchResult } from './types';
  * @param minLength 最小连续长度
  */
 export function matchConsecutive(fingerprint: string, minLength: number): MatchResult {
-  const hexPattern = /(\w)\1{${minLength - 1},}/g;
+  const hexPattern = new RegExp(`(\\w)\\1{${minLength - 1},}`, 'g');
   const match = hexPattern.exec(fingerprint);
   
   if (match) {
@@ -32,7 +32,7 @@ export function matchConsecutive(fingerprint: string, minLength: number): MatchR
  */
 export function matchRepeating(fingerprint: string, minLength: number): MatchResult {
   // 匹配重复的数字序列，如 "123123"
-  const pattern = new RegExp(`(\w{${minLength}})\1+`, 'g');
+  const pattern = new RegExp(`(\\w{${minLength}})\\1+`, 'g');
   const match = pattern.exec(fingerprint);
   
   if (match) {

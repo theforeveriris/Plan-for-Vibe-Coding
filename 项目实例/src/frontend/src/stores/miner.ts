@@ -40,6 +40,11 @@ async function fetchWithTimeout(
   }
 }
 
+// 检测网络是否在线
+function isNetworkOnline(): boolean {
+  return navigator.onLine
+}
+
 export const useMinerStore = defineStore('miner', () => {
   // 状态
   const isRunning = ref(false)
@@ -51,11 +56,15 @@ export const useMinerStore = defineStore('miner', () => {
   const hashrateHistory = ref<number[]>(Array(60).fill(0))
   const apiBase = ref(getApiBase())
   const sseReconnectCount = ref(0)
-  const maxSseReconnects = 5
+  const maxSseReconnects = 10
+  const sseConnectionState = ref<'connecting' | 'open' | 'closed' | 'error'>('closed')
+  const lastHeartbeatTime = ref<number>(0)
 
   // SSE 连接
   let sseConnection: EventSource | null = null
   let sseReconnectTimer: ReturnType<typeof setTimeout> | null = null
+  let heartbeatTimer: ReturnType<typeof setTimeout> | null = null
+  let connectionStartTime = 0
 
   // 计算属性
   const currentTask = computed<MiningTask | null>(() => null) // 简化实现
@@ -129,56 +138,175 @@ export const useMinerStore = defineStore('miner', () => {
     // 关闭旧连接
     closeSSEConnection()
 
+    // 检查网络状态
+    if (!isNetworkOnline()) {
+      addLog('error', '网络已断开，请检查网络连接后重试')
+      scheduleReconnect(targetTaskId, 5000)
+      return
+    }
+
     try {
-      sseConnection = new EventSource(`${apiBase.value}/api/miner/stream/${targetTaskId}`)
+      connectionStartTime = Date.now()
+      sseConnectionState.value = 'connecting'
+      const url = `${apiBase.value}/api/miner/stream/${targetTaskId}`
+      console.log(`[SSE] 正在连接: ${url}`)
+
+      sseConnection = new EventSource(url)
 
       sseConnection.onopen = () => {
-        sseReconnectCount.value = 0
-        console.log('SSE 连接已建立')
+        const connectTime = Date.now() - connectionStartTime
+        sseConnectionState.value = 'open'
+        lastHeartbeatTime.value = Date.now()
+        console.log(`[SSE] 连接已建立 (耗时 ${connectTime}ms)`)
+        addLog('info', `实时连接已建立`)
+
+        // 启动心跳检测
+        startHeartbeatCheck(targetTaskId)
       }
 
       sseConnection.onmessage = (event) => {
-        try {
-          // 处理 keep-alive
-          if (event.data.startsWith(': keep-alive')) {
-            return
-          }
+        // 更新心跳时间
+        lastHeartbeatTime.value = Date.now()
 
+        // 处理空消息
+        if (!event.data || event.data.trim() === '') {
+          return
+        }
+
+        // 处理 keep-alive
+        if (event.data.startsWith(': keep-alive')) {
+          console.log('[SSE] 收到心跳')
+          return
+        }
+
+        try {
           const message: SSEMessage = JSON.parse(event.data)
           handleSSEMessage(message)
         } catch (error) {
-          console.error('解析 SSE 消息失败:', error)
+          console.error('[SSE] 解析消息失败:', error, '原始数据:', event.data)
         }
       }
 
       sseConnection.onerror = (error) => {
-        console.error('SSE 连接错误:', error)
+        const currentState = sseConnection?.readyState
+        const stateNames: Record<number, string> = {
+          0: 'CONNECTING',
+          1: 'OPEN',
+          2: 'CLOSED',
+        }
+        console.error(`[SSE] 连接错误 (状态: ${stateNames[currentState || 2] || 'UNKNOWN'})`, error)
 
-        // 如果任务仍在运行，尝试重连
-        if (isRunning.value && sseReconnectCount.value < maxSseReconnects) {
-          sseReconnectCount.value++
-          const delay = Math.min(1000 * Math.pow(2, sseReconnectCount.value), 30000)
-          addLog('info', `SSE 连接断开，${delay / 1000}秒后尝试重连 (${sseReconnectCount.value}/${maxSseReconnects})`)
+        // 如果连接已打开过，说明是连接中断
+        if (sseConnectionState.value === 'open') {
+          sseConnectionState.value = 'error'
 
-          sseReconnectTimer = setTimeout(() => {
-            if (isRunning.value && taskId.value) {
-              startSSEConnection(taskId.value)
-            }
-          }, delay)
-        } else if (sseReconnectCount.value >= maxSseReconnects) {
-          addLog('error', 'SSE 重连次数已达上限，请检查网络连接')
-          closeSSEConnection()
-        } else {
-          closeSSEConnection()
+          // 如果任务仍在运行，尝试重连
+          if (isRunning.value) {
+            attemptReconnect(targetTaskId)
+          }
+        } else if (sseConnectionState.value === 'connecting') {
+          // 连接从未成功建立，可能是服务器错误或网络问题
+          sseConnectionState.value = 'error'
+
+          if (isRunning.value) {
+            attemptReconnect(targetTaskId)
+          }
         }
       }
     } catch (error) {
-      console.error('创建 SSE 连接失败:', error)
+      console.error('[SSE] 创建连接失败:', error)
+      sseConnectionState.value = 'error'
       addLog('error', '无法建立实时连接')
+
+      if (isRunning.value) {
+        attemptReconnect(targetTaskId)
+      }
     }
   }
 
+  function attemptReconnect(targetTaskId: string) {
+    // 检查是否达到最大重连次数
+    if (sseReconnectCount.value >= maxSseReconnects) {
+      addLog('error', `SSE 重连次数已达上限 (${maxSseReconnects}次)，请检查网络连接或后端服务状态`)
+      closeSSEConnection()
+      isRunning.value = false
+      return
+    }
+
+    // 检查网络状态
+    if (!isNetworkOnline()) {
+      console.log('[SSE] 网络离线，延迟重连')
+      addLog('info', '网络已断开，等待网络恢复...')
+      scheduleReconnect(targetTaskId, 5000)
+      return
+    }
+
+    sseReconnectCount.value++
+
+    // 使用指数退避 + 随机抖动，避免惊群效应
+    const baseDelay = Math.min(1000 * Math.pow(1.5, sseReconnectCount.value), 15000)
+    const jitter = Math.random() * 1000
+    const delay = baseDelay + jitter
+
+    const nextAttempt = sseReconnectCount.value
+    const maxAttempts = maxSseReconnects
+    console.log(`[SSE] 计划重连: ${delay.toFixed(0)}ms后 (第${nextAttempt}/${maxAttempts}次)`)
+    addLog('info', `连接断开，${(delay / 1000).toFixed(1)}秒后尝试重连 (${nextAttempt}/${maxAttempts})`)
+
+    scheduleReconnect(targetTaskId, delay)
+  }
+
+  function scheduleReconnect(targetTaskId: string, delay: number) {
+    // 清除旧定时器
+    if (sseReconnectTimer) {
+      clearTimeout(sseReconnectTimer)
+    }
+
+    sseReconnectTimer = setTimeout(() => {
+      if (isRunning.value) {
+        console.log(`[SSE] 执行重连...`)
+        startSSEConnection(targetTaskId)
+      }
+    }, delay)
+  }
+
+  function startHeartbeatCheck(targetTaskId: string) {
+    // 清除旧心跳检测
+    if (heartbeatTimer) {
+      clearInterval(heartbeatTimer)
+    }
+
+    // 每45秒检查一次心跳（服务器30秒发送一次 keep-alive）
+    heartbeatTimer = setInterval(() => {
+      const timeSinceLastHeartbeat = Date.now() - lastHeartbeatTime.value
+      console.log(`[SSE] 心跳检测: 距上次消息 ${(timeSinceLastHeartbeat / 1000).toFixed(1)}秒`)
+
+      // 如果超过90秒没有收到任何消息，认为连接已死
+      if (timeSinceLastHeartbeat > 90000) {
+        console.warn('[SSE] 心跳超时，连接可能已断开')
+        addLog('error', '实时连接无响应，尝试重新连接...')
+
+        // 强制关闭并重新连接
+        if (sseConnection) {
+          sseConnection.close()
+          sseConnection = null
+        }
+
+        if (isRunning.value) {
+          attemptReconnect(targetTaskId)
+        }
+      }
+    }, 45000)
+  }
+
   function closeSSEConnection() {
+    console.log('[SSE] 关闭连接')
+
+    if (heartbeatTimer) {
+      clearInterval(heartbeatTimer)
+      heartbeatTimer = null
+    }
+
     if (sseReconnectTimer) {
       clearTimeout(sseReconnectTimer)
       sseReconnectTimer = null
@@ -188,6 +316,9 @@ export const useMinerStore = defineStore('miner', () => {
       sseConnection.close()
       sseConnection = null
     }
+
+    sseConnectionState.value = 'closed'
+    lastHeartbeatTime.value = 0
   }
 
   function handleSSEMessage(message: SSEMessage) {
@@ -245,6 +376,8 @@ export const useMinerStore = defineStore('miner', () => {
     hashrateHistory,
     currentTask,
     apiBase,
+    sseConnectionState,
+    sseReconnectCount,
     updateApiUrl,
     startMining,
     stopMining,

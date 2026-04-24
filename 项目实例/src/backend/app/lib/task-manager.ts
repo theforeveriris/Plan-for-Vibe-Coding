@@ -1,23 +1,23 @@
 // 任务管理器
 import { v4 as uuidv4 } from 'uuid';
-import { Worker } from 'worker_threads';
-import path from 'path';
-import type { MiningTask, PatternConfig, KeyPair, SSEMessage } from '../pgp/types';
-import { createTask, updateTaskProgress, stopTask } from './db/queries';
+import type { MiningTask, PatternConfig, KeyPair, SSEMessage } from './pgp/types';
+import { createTask, updateTaskProgress, stopTask, getTask } from './db/queries';
+import { generateKeyPair } from './pgp/generator';
+import { matchesPattern } from './pgp/patterns';
 
-interface MiningWorker {
-  worker: Worker;
+interface WorkerInfo {
   taskId: string;
   attempts: number;
   hashrate: number;
   startTime: number;
   lastUpdateTime: number;
   lastAttempts: number;
+  intervalId: ReturnType<typeof setInterval>;
 }
 
 class TaskManager {
   private tasks: Map<string, MiningTask> = new Map();
-  private workers: Map<string, MiningWorker> = new Map();
+  private workers: Map<string, WorkerInfo> = new Map();
   private sseClients: Map<string, Set<(message: SSEMessage) => void>> = new Map();
 
   constructor() {
@@ -43,7 +43,9 @@ class TaskManager {
     this.tasks.set(taskId, task);
     this.sseClients.set(taskId, new Set());
 
-    // 启动 Worker 线程
+    console.log(`[TaskManager] 任务已创建: taskId=${taskId}, pattern=${pattern.type}, threads=${threads}`);
+
+    // 启动 Worker（在主线程中运行）
     for (let i = 0; i < threads; i++) {
       this.startWorker(taskId, pattern);
     }
@@ -52,48 +54,53 @@ class TaskManager {
   }
 
   private startWorker(taskId: string, pattern: PatternConfig) {
-    const workerPath = path.join(__dirname, '../../workers/mining.worker.ts');
-    const worker = new Worker(workerPath, {
-      workerData: { taskId, pattern }
-    });
-
-    const workerInfo: MiningWorker = {
-      worker,
+    const workerId = `${taskId}_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    
+    const workerInfo: WorkerInfo = {
       taskId,
       attempts: 0,
       hashrate: 0,
       startTime: Date.now(),
       lastUpdateTime: Date.now(),
       lastAttempts: 0,
+      intervalId: setInterval(async () => {
+        try {
+          // 每秒执行一次挖掘
+          const startTime = Date.now();
+          let batchAttempts = 0;
+          
+          // 每批处理最多 10 个密钥（避免阻塞事件循环）
+          while (batchAttempts < 10 && Date.now() - startTime < 900) {
+            const keyPair = await generateKeyPair();
+            batchAttempts++;
+            workerInfo.attempts++;
+            
+            const matchResult = matchesPattern(keyPair.fingerprint, pattern);
+            
+            if (matchResult.matched) {
+              this.handleMatch(taskId, keyPair, workerInfo.attempts);
+            }
+          }
+          
+          // 更新 hashrate
+          const now = Date.now();
+          const timeDiff = (now - workerInfo.lastUpdateTime) / 1000;
+          if (timeDiff >= 1) {
+            workerInfo.hashrate = (workerInfo.attempts - workerInfo.lastAttempts) / timeDiff;
+            workerInfo.lastUpdateTime = now;
+            workerInfo.lastAttempts = workerInfo.attempts;
+            
+            // 更新任务进度
+            this.updateTaskProgress(taskId);
+          }
+        } catch (error) {
+          console.error(`[TaskManager] Worker ${workerId} error:`, error);
+        }
+      }, 1000),
     };
 
-    this.workers.set(`${taskId}_${Date.now()}`, workerInfo);
-
-    worker.on('message', (message: any) => {
-      if (message.type === 'progress') {
-        workerInfo.attempts += message.attempts;
-        workerInfo.hashrate = message.hashrate;
-        
-        // 更新任务进度
-        this.updateTaskProgress(taskId);
-      } else if (message.type === 'match') {
-        // 处理匹配到的密钥
-        this.handleMatch(taskId, message.key, message.attempts);
-      }
-    });
-
-    worker.on('error', (error) => {
-      console.error(`Worker error for task ${taskId}:`, error);
-    });
-
-    worker.on('exit', (code) => {
-      console.log(`Worker exited with code ${code} for task ${taskId}`);
-      this.workers.forEach((info, key) => {
-        if (info.taskId === taskId) {
-          this.workers.delete(key);
-        }
-      });
-    });
+    this.workers.set(workerId, workerInfo);
+    console.log(`[TaskManager] Worker 已启动: ${workerId}`);
   }
 
   private updateTaskProgress(taskId: string) {
@@ -151,10 +158,12 @@ class TaskManager {
   }
 
   async stopTask(taskId: string) {
+    console.log(`[TaskManager] 停止任务: taskId=${taskId}`);
+
     // 停止所有相关 Worker
     this.workers.forEach((info, key) => {
       if (info.taskId === taskId) {
-        info.worker.terminate();
+        clearInterval(info.intervalId);
         this.workers.delete(key);
       }
     });
@@ -179,20 +188,43 @@ class TaskManager {
   }
 
   getTask(taskId: string): MiningTask | undefined {
-    return this.tasks.get(taskId);
+    // 先从内存获取
+    const memoryTask = this.tasks.get(taskId);
+    if (memoryTask) {
+      return memoryTask;
+    }
+
+    // 内存中没有，从数据库加载
+    const dbTask = getTask(taskId);
+    if (dbTask) {
+      // 转换日期类型
+      const task: MiningTask = {
+        ...dbTask,
+        startedAt: new Date(dbTask.startedAt),
+        stoppedAt: dbTask.stoppedAt ? new Date(dbTask.stoppedAt) : undefined,
+      };
+      this.tasks.set(taskId, task);
+      return task;
+    }
+
+    return undefined;
   }
 
   registerSSEClient(taskId: string, callback: (message: SSEMessage) => void) {
-    const clients = this.sseClients.get(taskId);
-    if (clients) {
-      clients.add(callback);
+    let clients = this.sseClients.get(taskId);
+    if (!clients) {
+      clients = new Set();
+      this.sseClients.set(taskId, clients);
     }
+    clients.add(callback);
+    console.log(`[TaskManager] SSE 客户端已注册: taskId=${taskId}, 客户端数=${clients.size}`);
   }
 
   unregisterSSEClient(taskId: string, callback: (message: SSEMessage) => void) {
     const clients = this.sseClients.get(taskId);
     if (clients) {
       clients.delete(callback);
+      console.log(`[TaskManager] SSE 客户端已注销: taskId=${taskId}, 剩余客户端数=${clients.size}`);
       if (clients.size === 0) {
         this.sseClients.delete(taskId);
       }
