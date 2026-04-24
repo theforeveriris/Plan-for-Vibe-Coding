@@ -62,8 +62,8 @@ watch(
 
 <style scoped>
 .miner-terminal {
-  background: rgba(0, 0, 0, 0.5);
-  border: 1px solid rgba(0, 240, 255, 0.3);
+  background: #ffffff;
+  border: 1px solid #e0e0e0;
   border-radius: 8px;
   overflow: hidden;
   height: 100%;
@@ -89,13 +89,13 @@ watch(
 }
 
 .timestamp {
-  color: rgba(255, 255, 255, 0.5);
+  color: #999999;
   white-space: nowrap;
   flex-shrink: 0;
 }
 
 .separator {
-  color: rgba(255, 255, 255, 0.3);
+  color: #cccccc;
   flex-shrink: 0;
 }
 
@@ -105,23 +105,23 @@ watch(
 }
 
 .message {
-  color: rgba(255, 255, 255, 0.9);
+  color: #333333;
 }
 
 .log-line.info .message {
-  color: rgba(255, 255, 255, 0.9);
+  color: #333333;
 }
 
 .log-line.match .message {
-  color: #00f0ff;
+  color: #0066cc;
 }
 
 .log-line.error .message {
-  color: #ff4444;
+  color: #cc0000;
 }
 
 .empty-state {
-  color: rgba(255, 255, 255, 0.5);
+  color: #999999;
   text-align: center;
   padding: 40px 0;
 }

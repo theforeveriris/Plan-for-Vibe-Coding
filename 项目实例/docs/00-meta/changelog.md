@@ -7,10 +7,18 @@
   - 支持标签切换动画和激活状态样式
   - 使用 scoped slot 传递 `activeTab` 状态给子内容
   - 用于组织控制面板/实时终端/已发现密钥、Hashrate趋势/监控面板
+- 新增规则引擎系统（Rule Engine）
+  - 实现 `RuleEngine` 类支持独立规则、规则组、优先级和冲突解决策略
+  - 新增 `RuleGroupManager.vue` 组件管理规则配置
+  - 新增 `ruleEngine.ts` Pinia Store 管理规则引擎状态
+  - 支持规则组 AND/OR 逻辑、规则引用、配置导入/导出
+- 新增 `ConfigModal.vue` 组件支持后端服务 URL 动态配置
+  - 支持修改后端地址并持久化到 `localStorage`
+  - 默认地址为 `http://localhost:3001`
 
 ### [ Changed ]
 - 重构 `Dashboard.vue` 布局，使用 TabContainer 组件：
-  - 控制面板 + 实时终端 + 已发现的特殊密钥 → 合并为单个标签页容器（左侧面板）
+  - 控制面板 + 实时终端 + 已发现的特殊密钥 + 规则引擎 → 合并为单个标签页容器（左侧面板）
   - Hashrate 趋势 + Hashrate 监控 → 合并为标签页容器（右侧面板）
 - 精简 UI，移除冗余标题和 Header：
   - `App.vue` 移除顶部 `<header>`，Dashboard 占满全屏（`height: 100vh`）
@@ -19,6 +27,19 @@
 - 优化 `StatsPanel.vue`，支持详细模式显示规则统计信息
 - 增强 `MinerTerminal.vue`，每条记录显示密钥指纹
 - 增强 `KeyCard.vue`，支持按规则类型高亮显示
+- 转型 `MinerControl.vue` 为任务控制面板：
+  - 移除规则管理功能（添加/删除/编辑规则）
+  - 移除 AND/OR 逻辑关系切换控件
+  - 添加规则配置摘要（只读显示）
+  - 添加提示引导用户到"规则引擎"标签页配置规则
+- 更新 `MinerTerminal.vue` 为白底黑字风格：
+  - 背景从半透明黑色改为白色 `#ffffff`
+  - 文字颜色从白色系列改为深灰/黑色系列
+  - 匹配消息颜色从青色改为蓝色 `#0066cc`
+  - 错误消息颜色从红色改为深红 `#cc0000`
+- 更新 `KeyCard.vue` 操作按钮：
+  - 移除"📋 复制"、"⬇️ 下载"、"👁️ 详情"中的 emoji
+  - 按钮文字改为纯文本：复制、下载、详情
 
 ### [ Fixed ]
 - 修复 `Dashboard.vue` 布局问题 - TabContainer 被挤压导致不可见
@@ -33,6 +54,14 @@
   - 确保所有 chart 配置选项正确初始化
 - 修复 `Dashboard.vue` 重复 title 显示问题
   - 移除 Dashboard 内部 header，仅保留 `App.vue` 的标题
+- 修复密钥下载功能空内容问题
+  - 后端 `handleMatch` 方法传递 `publicKeyArmored` 到 SSE 消息
+  - 前端 `miner.ts` 保存公钥内容到 `SpecialKey`
+  - `KeyCard.vue` 下载前校验公钥内容和格式
+- 解决控制面板与规则引擎功能冲突
+  - 职责分离：MinerControl 专注任务控制，RuleGroupManager 专注规则配置
+  - 统一规则管理逻辑到 RuleGroupManager
+  - MinerControl 只读显示规则配置摘要
 
 ## 2026-04-24
 

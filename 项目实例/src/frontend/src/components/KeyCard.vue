@@ -13,13 +13,13 @@
     </div>
     <div class="key-actions">
       <button @click="copyFingerprint" class="ghost-btn action-btn" title="复制指纹">
-        📋 复制
+        复制
       </button>
       <button @click="downloadKey" class="ghost-btn action-btn" title="下载公钥">
-        ⬇️ 下载
+        下载
       </button>
       <button @click="showDetails" class="ghost-btn action-btn" title="查看详情">
-        👁️ 详情
+        详情
       </button>
     </div>
   </div>

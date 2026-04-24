@@ -372,42 +372,116 @@ function startMining() {
 }
 ```
 
-## 4. 修改的文件清单
+## 4. UI细节优化
 
-### 4.1 后端文件
+### 4.1 KeyCard 操作按钮简化
+
+#### 变更内容
+- 移除了操作按钮中的 emoji 图标
+- 按钮文字从 "📋 复制"、"⬇️ 下载"、"👁️ 详情" 改为纯文本 "复制"、"下载"、"详情"
+
+#### 实现位置
+[KeyCard.vue](file:///c:/Lefts%20Workspace/%E5%88%9B%E6%84%8F/%E8%87%AA%E7%94%A8%E7%9A%84%20vibe%20coding%20%E6%8A%80%E5%B7%A7/%E9%A1%B9%E7%9B%AE%E5%AE%9E%E4%BE%8B/src/frontend/src/components/KeyCard.vue#L15-L23)
+```vue
+<div class="key-actions">
+  <button @click="copyFingerprint" class="ghost-btn action-btn" title="复制指纹">
+    复制
+  </button>
+  <button @click="downloadKey" class="ghost-btn action-btn" title="下载公钥">
+    下载
+  </button>
+  <button @click="showDetails" class="ghost-btn action-btn" title="查看详情">
+    详情
+  </button>
+</div>
+```
+
+#### 设计理由
+- 保持界面简洁，减少视觉噪音
+- 与整体现代简约风格保持一致
+- 按钮文字本身已足够表达功能含义
+
+### 4.2 实时终端白底黑字风格
+
+#### 变更内容
+- 背景色从半透明黑色 `rgba(0, 0, 0, 0.5)` 改为白色 `#ffffff`
+- 边框从青色半透明 `rgba(0, 240, 255, 0.3)` 改为浅灰 `#e0e0e0`
+- 文字颜色从白色系列改为深灰/黑色系列
+- 匹配消息颜色从青色 `#00f0ff` 改为蓝色 `#0066cc`
+- 错误消息颜色从红色 `#ff4444` 改为深红 `#cc0000`
+
+#### 实现位置
+[MinerTerminal.vue](file:///c:/Lefts%20Workspace/%E5%88%9B%E6%84%8F/%E8%87%AA%E7%94%A8%E7%9A%84%20vibe%20coding%20%E6%8A%80%E5%B7%A7/%E9%A1%B9%E7%9B%AE%E5%AE%9E%E4%BE%8B/src/frontend/src/components/MinerTerminal.vue#L64-L128)
+```css
+.miner-terminal {
+  background: #ffffff;
+  border: 1px solid #e0e0e0;
+}
+
+.timestamp {
+  color: #999999;
+}
+
+.message {
+  color: #333333;
+}
+
+.log-line.match .message {
+  color: #0066cc;
+}
+
+.log-line.error .message {
+  color: #cc0000;
+}
+```
+
+#### 设计理由
+- 与整体现代简约风格保持一致（白底黑字）
+- 提高可读性，减少视觉疲劳
+- 与 Dashboard 其他组件风格统一
+
+## 5. 修改的文件清单
+
+### 5.1 后端文件
 - `src/backend/app/lib/pgp/types.ts` - 更新类型定义（添加规则引擎类型）
 - `src/backend/app/lib/pgp/patterns.ts` - 实现 AND/OR 逻辑（基础版本）
 - `src/backend/app/lib/pgp/rule-engine.ts` - 规则引擎核心（新增）
 - `src/backend/app/lib/task-manager.ts` - 传递逻辑运算符、公钥内容和规则引擎结果
 - `src/backend/app/api/miner/start/route.ts` - 接收逻辑运算符和规则引擎配置
 
-### 4.2 前端文件
+### 5.2 前端文件
 - `src/frontend/src/types/index.ts` - 更新类型定义（添加规则引擎类型和扩展字段）
 - `src/frontend/src/stores/miner.ts` - 保存逻辑运算符、公钥内容和规则引擎结果
 - `src/frontend/src/stores/ruleEngine.ts` - 规则引擎状态管理（新增）
 - `src/frontend/src/components/MinerControl.vue` - 转型为任务控制面板（移除规则管理，添加配置摘要）
 - `src/frontend/src/components/RuleGroupManager.vue` - 规则引擎管理界面（新增）
-- `src/frontend/src/components/KeyCard.vue` - 修复下载功能并添加校验
+- `src/frontend/src/components/KeyCard.vue` - 修复下载功能并添加校验；移除按钮emoji
+- `src/frontend/src/components/MinerTerminal.vue` - 改为白底黑字风格
 - `src/frontend/src/views/Dashboard.vue` - 添加规则引擎标签页
 
-## 5. 测试建议
+## 6. 测试建议
 
-### 5.1 筛选逻辑测试（规则引擎）
+### 6.1 筛选逻辑测试（规则引擎）
 1. **独立规则 OR 测试**：验证任一独立规则匹配即触发
 2. **规则组 AND 测试**：验证组内所有规则必须匹配才触发
 3. **规则组 OR 测试**：验证组内任一规则匹配即触发
 4. **优先级测试**：验证高优先级规则/组优先执行
 5. **冲突策略测试**：验证不同冲突策略的行为
 
-### 5.2 密钥下载测试
+### 6.2 密钥下载测试
 1. **正常下载**：验证包含有效公钥的密钥可以正常下载
 2. **空内容测试**：验证空公钥会给出错误提示
 3. **格式错误测试**：验证格式不正确的公钥会给出错误提示
 4. **多浏览器测试**：在不同浏览器中测试下载功能
 5. **网络异常测试**：模拟网络异常时的错误处理
 
-### 5.3 控制面板与规则引擎集成测试
+### 6.3 控制面板与规则引擎集成测试
 1. **配置同步**：验证 MinerControl 正确显示 RuleGroupManager 的配置摘要
 2. **任务启动**：验证使用 RuleGroupManager 配置的规则启动任务
 3. **标签切换**：验证在控制面板和规则引擎标签间切换正常
 4. **权限分离**：验证 MinerControl 不能修改规则配置
+
+### 6.4 UI细节测试
+1. **KeyCard按钮**：验证按钮显示纯文本，无emoji
+2. **终端风格**：验证白底黑字，匹配消息为蓝色，错误消息为深红色
+3. **暗色模式**：验证各组件在暗色模式下显示正常
