@@ -8,6 +8,7 @@
         <TabContainer
           :tabs="[
             { id: 'control', label: '控制面板' },
+            { id: 'rules', label: '规则引擎' },
             { id: 'terminal', label: '实时终端' },
             { id: 'keys', label: '已发现的特殊密钥' }
           ]"
@@ -18,6 +19,9 @@
             <Transition name="fade" mode="out-in">
               <div v-if="activeTab === 'control'" class="tab-panel" key="control">
                 <MinerControl />
+              </div>
+              <div v-else-if="activeTab === 'rules'" class="tab-panel" key="rules">
+                <RuleGroupManager />
               </div>
               <div v-else-if="activeTab === 'terminal'" class="tab-panel" key="terminal">
                 <MinerTerminal />
@@ -80,6 +84,7 @@ import MinerTerminal from '../components/MinerTerminal.vue'
 import HashrateChart from '../components/HashrateChart.vue'
 import KeyCard from '../components/KeyCard.vue'
 import TabContainer from '../components/TabContainer.vue'
+import RuleGroupManager from '../components/RuleGroupManager.vue'
 
 const minerStore = useMinerStore()
 </script>
