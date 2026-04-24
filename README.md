@@ -37,6 +37,14 @@
 └── img/                  # 图片资源
 ```
 
+## 项目实例迁移说明
+
+> **注意**：本仓库原有的 `项目实例/`（PGP Vanity Key Miner）已迁移至独立仓库维护。
+>
+> **新仓库地址**：[https://github.com/theforeveriris/PGP-vanity-key-miner](https://github.com/theforeveriris/PGP-vanity-key-miner)
+>
+> 该项目是一个用于生成具有特殊指纹的 PGP 密钥对的全栈 Web 应用，脱胎于本仓库的教程实践部分。后续更新、Issue 提交和贡献请前往新仓库进行。
+
 ## 许可证与引用说明
 
 本仓库采用 **Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International License** 协议发布。
