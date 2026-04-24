@@ -5,31 +5,83 @@ import type { PatternType, PatternRule, MatchResult } from './types';
  * 检查指纹是否匹配给定的规则列表
  * @param fingerprint 公钥指纹
  * @param rules 规则列表
+ * @param logicOperator 逻辑关系: 'AND' 或 'OR' (默认 'OR')
  * @returns 匹配结果
  */
-export function matchesPattern(fingerprint: string, rules: PatternRule[]): MatchResult {
-  for (const rule of rules) {
-    if (!rule.enabled) continue;
+export function matchesPattern(
+  fingerprint: string,
+  rules: PatternRule[],
+  logicOperator: 'AND' | 'OR' = 'OR'
+): MatchResult {
+  const enabledRules = rules.filter(rule => rule.enabled);
 
-    const result = matchSinglePattern(fingerprint, rule);
-    if (result.matched) {
-      return {
-        matched: true,
-        position: result.position,
-        matchedText: result.matchedText,
-        patternId: rule.id,
-        color: rule.color,
-      };
-    }
+  if (enabledRules.length === 0) {
+    return {
+      matched: false,
+      position: -1,
+      matchedText: '',
+      patternId: '',
+      color: '',
+    };
   }
 
-  return {
-    matched: false,
-    position: -1,
-    matchedText: '',
-    patternId: '',
-    color: '',
-  };
+  if (logicOperator === 'AND') {
+    // AND 逻辑：所有启用的规则都必须匹配
+    let allMatched = true;
+    let firstMatchResult: MatchResult | null = null;
+
+    for (const rule of enabledRules) {
+      const result = matchSinglePattern(fingerprint, rule);
+      if (!result.matched) {
+        allMatched = false;
+        break;
+      }
+      // 保存第一个匹配结果用于返回
+      if (!firstMatchResult) {
+        firstMatchResult = {
+          matched: true,
+          position: result.position,
+          matchedText: result.matchedText,
+          patternId: rule.id,
+          color: rule.color,
+        };
+      }
+    }
+
+    if (allMatched && firstMatchResult) {
+      return firstMatchResult;
+    }
+
+    return {
+      matched: false,
+      position: -1,
+      matchedText: '',
+      patternId: '',
+      color: '',
+    };
+  } else {
+    // OR 逻辑：任一规则匹配即返回（原有逻辑）
+    for (const rule of enabledRules) {
+      const result = matchSinglePattern(fingerprint, rule);
+      if (result.matched) {
+        return {
+          matched: true,
+          position: result.position,
+          matchedText: result.matchedText,
+          patternId: rule.id,
+          color: rule.color,
+        };
+      }
+    }
+
+    return {
+      matched: false,
+      position: -1,
+      matchedText: '',
+      patternId: '',
+      color: '',
+    };
+  }
 }
 
 function matchSinglePattern(fingerprint: string, rule: PatternRule): { matched: boolean; position: number; matchedText: string } {

@@ -1,11 +1,11 @@
 <template>
   <div class="tab-container">
-    <!-- 标签栏 -->
+    <!-- 标签栏 - 胶囊样式 -->
     <div class="tab-header" role="tablist">
       <button
         v-for="tab in tabs"
         :key="tab.id"
-        class="tab-button"
+        class="pill-tab"
         :class="{ active: activeTab === tab.id }"
         @click="activeTab = tab.id"
         :aria-selected="activeTab === tab.id"
@@ -18,7 +18,9 @@
     </div>
     <!-- 内容区 -->
     <div class="tab-content">
-      <slot :activeTab="activeTab" />
+      <Transition name="fade" mode="out-in">
+        <slot :activeTab="activeTab" />
+      </Transition>
     </div>
   </div>
 </template>
@@ -42,7 +44,7 @@ const activeTab = ref(props.defaultTab || props.tabs[0]?.id || '')
 <style scoped>
 .tab-container {
   background: transparent;
-  border-radius: 12px;
+  border-radius: 8px;
   overflow: hidden;
   display: flex;
   flex-direction: column;
@@ -51,61 +53,88 @@ const activeTab = ref(props.defaultTab || props.tabs[0]?.id || '')
 
 .tab-header {
   display: flex;
-  background: rgba(15, 23, 42, 0.8);
-  border-bottom: 1px solid rgba(148, 163, 184, 0.1);
-  border-radius: 12px 12px 0 0;
-  padding: 4px 12px;
+  background: transparent;
+  border-bottom: 1px solid #e0e0e0;
+  border-radius: 8px 8px 0 0;
+  padding: 8px 12px;
   gap: 8px;
 }
 
-.tab-button {
-  padding: 12px 20px;
-  background: transparent;
-  border: none;
-  color: rgba(255, 255, 255, 0.6);
-  cursor: pointer;
-  font-size: 14px;
-  font-weight: 500;
-  transition: all 0.2s ease;
-  position: relative;
-  outline: none;
-  border-radius: 8px;
-  white-space: nowrap;
+@media (prefers-color-scheme: dark) {
+  .tab-header {
+    border-bottom: 1px solid #333;
+  }
 }
 
-.tab-button:focus-visible {
-  outline: 2px solid #3b82f6;
+/* 胶囊样式标签 */
+.pill-tab {
+  padding: 8px 16px;
+  border-radius: 20px;
+  background: transparent;
+  border: 1px solid transparent;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  font-weight: 500;
+  font-size: 14px;
+  color: #666666;
+  white-space: nowrap;
+  outline: none;
+}
+
+@media (prefers-color-scheme: dark) {
+  .pill-tab {
+    color: #cccccc;
+  }
+}
+
+.pill-tab:focus-visible {
+  outline: 2px solid #d8b4fe;
   outline-offset: -2px;
 }
 
-.tab-button:hover {
-  color: rgba(255, 255, 255, 0.9);
-  background: rgba(59, 130, 246, 0.1);
+.pill-tab:hover {
+  color: #333333;
+  background: #f0f0f0;
   transform: translateY(-1px);
 }
 
-.tab-button.active {
-  color: #3b82f6;
-  background: rgba(59, 130, 246, 0.15);
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+@media (prefers-color-scheme: dark) {
+  .pill-tab:hover {
+    color: #ffffff;
+    background: #333333;
+  }
 }
 
-.tab-button.active::after {
-  content: '';
-  position: absolute;
-  bottom: 0;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 20px;
-  height: 3px;
-  background: #3b82f6;
-  border-radius: 3px;
-  transition: all 0.3s ease;
+.pill-tab.active {
+  background: #f5f3ff;
+  border-color: #e9d5ff;
+  color: #9333ea;
+  box-shadow: 0 2px 4px rgba(147, 51, 234, 0.1);
+}
+
+@media (prefers-color-scheme: dark) {
+  .pill-tab.active {
+    background: rgba(147, 51, 234, 0.2);
+    border-color: rgba(147, 51, 234, 0.3);
+    color: #d8b4fe;
+    box-shadow: 0 2px 4px rgba(147, 51, 234, 0.2);
+  }
 }
 
 .tab-content {
   flex: 1;
   overflow: hidden;
   padding: 0;
+}
+
+/* 淡入淡出动画 */
+.fade-enter-active,
+.fade-leave-active {
+  transition: opacity 0.3s ease;
+}
+
+.fade-enter-from,
+.fade-leave-to {
+  opacity: 0;
 }
 </style>

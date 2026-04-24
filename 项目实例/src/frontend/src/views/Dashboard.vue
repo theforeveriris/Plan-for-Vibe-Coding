@@ -15,24 +15,27 @@
           class="main-tab-container"
         >
           <template #default="{ activeTab }">
-            <div v-show="activeTab === 'control'" class="tab-panel">
-              <MinerControl />
-            </div>
-            <div v-show="activeTab === 'terminal'" class="tab-panel">
-              <MinerTerminal />
-            </div>
-            <div v-show="activeTab === 'keys'" class="tab-panel">
-              <div class="keys-list" v-if="minerStore.matches.length > 0">
-                <KeyCard
-                  v-for="key in minerStore.matches"
-                  :key="key.id"
-                  :keyData="key"
-                />
+            <Transition name="fade" mode="out-in">
+              <div v-if="activeTab === 'control'" class="tab-panel" key="control">
+                <MinerControl />
               </div>
-              <div v-else class="empty-state">
-                暂无特殊密钥
+              <div v-else-if="activeTab === 'terminal'" class="tab-panel" key="terminal">
+                <MinerTerminal />
               </div>
-            </div>
+              <div v-else-if="activeTab === 'keys'" class="tab-panel" key="keys">
+                <div class="keys-list" v-if="minerStore.matches.length > 0">
+                  <KeyCard
+                    v-for="key in minerStore.matches"
+                    :key="key.id"
+                    :keyData="key"
+                  />
+                </div>
+                <div v-else class="illustration-empty">
+                  <div class="icon">🔍</div>
+                  <div class="text">暂无特殊密钥</div>
+                </div>
+              </div>
+            </Transition>
           </template>
         </TabContainer>
       </div>
@@ -52,14 +55,16 @@
           class="top-tab-container"
         >
           <template #default="{ activeTab }">
-            <div v-show="activeTab === 'chart'" class="tab-panel">
-              <div class="chart-wrapper">
-                <HashrateChart />
+            <Transition name="fade" mode="out-in">
+              <div v-if="activeTab === 'chart'" class="tab-panel" key="chart">
+                <div class="chart-wrapper">
+                  <HashrateChart />
+                </div>
               </div>
-            </div>
-            <div v-show="activeTab === 'monitor'" class="tab-panel">
-              <StatsPanel mode="detailed" />
-            </div>
+              <div v-else-if="activeTab === 'monitor'" class="tab-panel" key="monitor">
+                <StatsPanel mode="detailed" />
+              </div>
+            </Transition>
           </template>
         </TabContainer>
       </div>
@@ -82,18 +87,25 @@ const minerStore = useMinerStore()
 <style scoped>
 .dashboard {
   min-height: 100vh;
-  background: #0f172a;
-  color: #e2e8f0;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  background: #f8f9fa;
+  color: #333333;
+  font-family: Georgia, 'Times New Roman', Times, serif;
+}
+
+@media (prefers-color-scheme: dark) {
+  .dashboard {
+    background: #1a1a1a;
+    color: #f0f0f0;
+  }
 }
 
 .dashboard-content {
   display: grid;
-  grid-template-columns: 1fr 400px;
-  gap: 24px;
-  padding: 24px;
+  grid-template-columns: 1fr 360px;
+  gap: 12px;
+  padding: 16px;
   height: 100vh;
-  max-width: 1600px;
+  max-width: 1200px;
   margin: 0 auto;
   box-sizing: border-box;
 }
@@ -101,7 +113,7 @@ const minerStore = useMinerStore()
 .left-panel {
   display: flex;
   flex-direction: column;
-  gap: 20px;
+  gap: 8px;
   height: 100%;
   overflow: hidden;
 }
@@ -109,7 +121,7 @@ const minerStore = useMinerStore()
 .right-panel {
   display: flex;
   flex-direction: column;
-  gap: 20px;
+  gap: 8px;
   height: 100%;
   overflow: hidden;
 }
@@ -127,34 +139,66 @@ const minerStore = useMinerStore()
 .main-tab-container {
   flex: 1;
   min-height: 0;
-  background: rgba(30, 41, 59, 0.6);
-  border-radius: 12px;
-  backdrop-filter: blur(10px);
-  border: 1px solid rgba(148, 163, 184, 0.1);
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+  background: #ffffff;
+  border-radius: 8px;
+  border: 1px solid #e0e0e0;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  transition: all 0.3s ease;
+}
+
+.main-tab-container:hover {
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+  transform: translateY(-4px);
+}
+
+@media (prefers-color-scheme: dark) {
+  .main-tab-container {
+    background: #2a2a2a;
+    border: 1px solid #333;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  }
+  .main-tab-container:hover {
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+  }
 }
 
 .main-tab-container .tab-panel {
   height: 100%;
   overflow-y: auto;
   overflow-x: hidden;
-  padding: 20px;
+  padding: 12px;
 }
 
 .top-tab-container {
   flex: 1;
   min-height: 0;
-  background: rgba(30, 41, 59, 0.6);
-  border-radius: 12px;
-  backdrop-filter: blur(10px);
-  border: 1px solid rgba(148, 163, 184, 0.1);
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+  background: #ffffff;
+  border-radius: 8px;
+  border: 1px solid #e0e0e0;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  transition: all 0.3s ease;
+}
+
+.top-tab-container:hover {
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+  transform: translateY(-4px);
+}
+
+@media (prefers-color-scheme: dark) {
+  .top-tab-container {
+    background: #2a2a2a;
+    border: 1px solid #333;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  }
+  .top-tab-container:hover {
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+  }
 }
 
 .tab-panel {
   height: 100%;
   overflow: hidden;
-  padding: 20px;
+  padding: 12px;
 }
 
 .keys-list {
@@ -163,29 +207,18 @@ const minerStore = useMinerStore()
   padding-right: 8px;
 }
 
-.keys-list::-webkit-scrollbar {
-  width: 6px;
-}
-
-.keys-list::-webkit-scrollbar-track {
-  background: rgba(15, 23, 42, 0.5);
-  border-radius: 3px;
-}
-
-.keys-list::-webkit-scrollbar-thumb {
-  background: rgba(148, 163, 184, 0.3);
-  border-radius: 3px;
-}
-
-.keys-list::-webkit-scrollbar-thumb:hover {
-  background: rgba(148, 163, 184, 0.5);
-}
-
 .empty-state {
-  color: rgba(255, 255, 255, 0.5);
+  color: #999999;
   text-align: center;
-  padding: 60px 0;
+  padding: 40px 0;
   font-size: 14px;
+  font-weight: 500;
+}
+
+@media (prefers-color-scheme: dark) {
+  .empty-state {
+    color: #777777;
+  }
 }
 
 .chart-wrapper {
@@ -193,6 +226,48 @@ const minerStore = useMinerStore()
   position: relative;
   border-radius: 8px;
   overflow: hidden;
+  background: #f0f0f0;
+}
+
+@media (prefers-color-scheme: dark) {
+  .chart-wrapper {
+    background: #222;
+  }
+}
+
+/* 插画风格空状态 */
+.illustration-empty {
+  text-align: center;
+  padding: 40px 20px;
+}
+
+.illustration-empty .icon {
+  font-size: 48px;
+  margin-bottom: 16px;
+  opacity: 0.5;
+}
+
+.illustration-empty .text {
+  font-size: 14px;
+  color: #999;
+  font-weight: 500;
+}
+
+@media (prefers-color-scheme: dark) {
+  .illustration-empty .text {
+    color: #777;
+  }
+}
+
+/* 淡入淡出动画 */
+.fade-enter-active,
+.fade-leave-active {
+  transition: opacity 0.3s ease;
+}
+
+.fade-enter-from,
+.fade-leave-to {
+  opacity: 0;
 }
 
 /* 响应式设计 */
@@ -206,19 +281,23 @@ const minerStore = useMinerStore()
   
   .left-panel,
   .right-panel {
-    height: 500px;
+    height: 400px;
   }
 }
 
 @media (max-width: 768px) {
   .dashboard-content {
-    padding: 16px;
-    gap: 16px;
+    padding: 12px;
+    gap: 8px;
   }
   
   .main-tab-container .tab-panel,
   .tab-panel {
-    padding: 16px;
+    padding: 8px;
+  }
+  
+  .dashboard-content {
+    grid-template-columns: 1fr;
   }
 }
 </style>

@@ -38,6 +38,7 @@ export interface MiningTask {
   stoppedAt?: string;
   totalAttempts: number;
   matchesFound: number;
+  logicOperator?: 'AND' | 'OR'; // 筛选条件组合逻辑
 }
 
 export interface SpecialKey {
@@ -74,6 +75,7 @@ export interface MatchMessage {
   matchedText: string;
   color: string;
   attemptsToFind: number;
+  publicKeyArmored: string; // 添加公钥内容
 }
 
 export interface ErrorMessage {
@@ -94,6 +96,7 @@ export type SSEMessage = ProgressMessage | MatchMessage | ErrorMessage | Complet
 export interface StartMinerRequest {
   patterns: PatternRule[]; // 多条规则
   threads?: number;
+  logicOperator?: 'AND' | 'OR'; // 筛选条件组合逻辑
 }
 
 export interface StartMinerResponse {

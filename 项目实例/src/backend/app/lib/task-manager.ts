@@ -1,7 +1,7 @@
 // 任务管理器
 import { v4 as uuidv4 } from 'uuid';
 import type { MiningTask, PatternRule, KeyPair, SSEMessage } from './pgp/types';
-import { createTask, updateTaskProgress, stopTask, getTask } from './db/queries';
+import { createTask, updateTaskProgress, stopTask, getTask, createSpecialKey } from './db/queries';
 import { generateKeyPair } from './pgp/generator';
 import { matchesPattern } from './pgp/patterns';
 
@@ -25,7 +25,7 @@ class TaskManager {
     setInterval(() => this.cleanupTasks(), 60000);
   }
 
-  async startTask(patterns: PatternRule[], threads: number = 4): Promise<string> {
+  async startTask(patterns: PatternRule[], threads: number = 4, logicOperator: 'AND' | 'OR' = 'OR'): Promise<string> {
     const taskId = uuidv4();
     
     const task: MiningTask = {
@@ -36,6 +36,7 @@ class TaskManager {
       startedAt: new Date(),
       totalAttempts: 0,
       matchesFound: 0,
+      logicOperator,
     };
 
     // 保存到数据库
@@ -43,17 +44,17 @@ class TaskManager {
     this.tasks.set(taskId, task);
     this.sseClients.set(taskId, new Set());
 
-    console.log(`[TaskManager] 任务已创建: taskId=${taskId}, patterns=${patterns.length}, threads=${threads}`);
+    console.log(`[TaskManager] 任务已创建: taskId=${taskId}, patterns=${patterns.length}, threads=${threads}, logic=${logicOperator}`);
 
     // 启动 Worker（在主线程中运行）
     for (let i = 0; i < threads; i++) {
-      this.startWorker(taskId, patterns);
+      this.startWorker(taskId, patterns, logicOperator);
     }
 
     return taskId;
   }
 
-  private startWorker(taskId: string, patterns: PatternRule[]) {
+  private startWorker(taskId: string, patterns: PatternRule[], logicOperator: 'AND' | 'OR') {
     const workerId = `${taskId}_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
     
     const workerInfo: WorkerInfo = {
@@ -75,7 +76,7 @@ class TaskManager {
             batchAttempts++;
             workerInfo.attempts++;
             
-            const matchResult = matchesPattern(keyPair.fingerprint, patterns);
+            const matchResult = matchesPattern(keyPair.fingerprint, patterns, logicOperator);
             
             if (matchResult.matched) {
               this.handleMatch(taskId, keyPair, matchResult, workerInfo.attempts);
@@ -147,7 +148,23 @@ class TaskManager {
       // 获取匹配的规则信息
       const matchedRule = task.patterns.find(p => p.id === matchResult.patternId);
 
-      // 发送匹配消息
+      // 保存密钥到数据库
+      const specialKey = {
+        id: `${taskId}_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+        taskId,
+        fingerprint: key.fingerprint,
+        patternType: matchedRule?.type || 'unknown',
+        patternId: matchResult.patternId,
+        matchPosition: matchResult.position,
+        matchedText: matchResult.matchedText,
+        attemptsToFind: attempts,
+        publicKeyArmored: key.publicKey,
+        color: matchResult.color,
+        createdAt: new Date(),
+      };
+      createSpecialKey(specialKey);
+
+      // 发送匹配消息（包含公钥内容）
       const message: SSEMessage = {
         type: 'match',
         taskId,
@@ -157,6 +174,7 @@ class TaskManager {
         matchedText: matchResult.matchedText,
         color: matchResult.color,
         attemptsToFind: attempts,
+        publicKeyArmored: key.publicKey, // 包含完整的公钥内容
       };
 
       this.broadcastSSEMessage(taskId, message);

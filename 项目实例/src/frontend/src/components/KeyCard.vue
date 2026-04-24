@@ -1,117 +1,239 @@
 <template>
-  <div class="key-card" :style="{ borderColor: keyData.color || '#00f0ff' }">
+  <div class="key-card" :style="{ borderColor: keyData.color }">
     <div class="key-header">
-      <span class="key-type" :style="{ color: keyData.color || '#00f0ff' }">
+      <span class="pattern-badge" :style="{ backgroundColor: keyData.color + '20', color: keyData.color }">
         {{ keyData.patternType }}
       </span>
-      <span class="key-time">{{ formatTime(keyData.createdAt) }}</span>
+      <span class="match-text">{{ keyData.matchedText }}</span>
     </div>
-    <div class="key-fingerprint" :style="{ color: keyData.color || '#00f0ff' }">
-      {{ keyData.fingerprint }}
-    </div>
-    <div class="key-matched-text" v-if="keyData.matchedText">
-      匹配: <span :style="{ color: keyData.color || '#00f0ff' }">{{ keyData.matchedText }}</span>
-    </div>
-    <div class="key-stats">
+    <div class="key-fingerprint">{{ keyData.fingerprint }}</div>
+    <div class="key-meta">
       <span>尝试次数: {{ keyData.attemptsToFind }}</span>
+      <span>{{ formatDate(keyData.createdAt) }}</span>
     </div>
     <div class="key-actions">
-      <button @click="copyPublicKey" class="copy-btn">复制公钥</button>
-      <button @click="downloadKey" class="download-btn">下载密钥</button>
+      <button @click="copyFingerprint" class="ghost-btn action-btn" title="复制指纹">
+        📋 复制
+      </button>
+      <button @click="downloadKey" class="ghost-btn action-btn" title="下载公钥">
+        ⬇️ 下载
+      </button>
+      <button @click="showDetails" class="ghost-btn action-btn" title="查看详情">
+        👁️ 详情
+      </button>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
+import { ref } from 'vue'
 import type { SpecialKey } from '../types'
 
 const props = defineProps<{
   keyData: SpecialKey
 }>()
 
-function formatTime(dateStr: string): string {
-  return new Date(dateStr).toLocaleString('zh-CN')
+const showDetail = ref(false)
+
+function formatDate(dateStr: string): string {
+  const date = new Date(dateStr)
+  return date.toLocaleString('zh-CN')
 }
 
-function copyPublicKey() {
-  navigator.clipboard.writeText(props.keyData.publicKeyArmored)
-    .then(() => alert('公钥已复制到剪贴板'))
-    .catch(() => alert('复制失败'))
+function copyFingerprint() {
+  navigator.clipboard.writeText(props.keyData.fingerprint)
+    .then(() => {
+      alert('指纹已复制到剪贴板')
+    })
+    .catch(err => {
+      console.error('复制失败:', err)
+      alert('复制失败')
+    })
 }
 
 function downloadKey() {
-  const blob = new Blob([props.keyData.publicKeyArmored], { type: 'text/plain' })
-  const url = URL.createObjectURL(blob)
-  const a = document.createElement('a')
-  a.href = url
-  a.download = `pgp-key-${props.keyData.fingerprint}.asc`
-  a.click()
-  URL.revokeObjectURL(url)
+  // 校验公钥内容
+  if (!props.keyData.publicKeyArmored || props.keyData.publicKeyArmored.trim() === '') {
+    alert('公钥内容为空，无法下载')
+    console.error('公钥内容为空:', props.keyData)
+    return
+  }
+
+  // 校验公钥格式
+  if (!props.keyData.publicKeyArmored.includes('-----BEGIN PGP PUBLIC KEY BLOCK-----')) {
+    alert('公钥格式不正确')
+    console.error('公钥格式不正确:', props.keyData.publicKeyArmored)
+    return
+  }
+
+  try {
+    // 创建 Blob
+    const blob = new Blob([props.keyData.publicKeyArmored], {
+      type: 'text/plain;charset=utf-8'
+    })
+
+    // 创建下载链接
+    const url = URL.createObjectURL(blob)
+    const link = document.createElement('a')
+    link.href = url
+    link.download = `pgp-key-${props.keyData.fingerprint}.asc`
+
+    // 触发下载
+    document.body.appendChild(link)
+    link.click()
+
+    // 清理
+    document.body.removeChild(link)
+    URL.revokeObjectURL(url)
+
+    console.log('密钥下载成功:', props.keyData.fingerprint)
+  } catch (error) {
+    console.error('下载失败:', error)
+    alert('下载失败: ' + (error instanceof Error ? error.message : '未知错误'))
+  }
+}
+
+function showDetails() {
+  showDetail.value = !showDetail.value
+  if (showDetail.value) {
+    // 显示详细信息
+    const details = `
+指纹: ${props.keyData.fingerprint}
+规则类型: ${props.keyData.patternType}
+匹配文本: ${props.keyData.matchedText}
+匹配位置: ${props.keyData.matchPosition}
+尝试次数: ${props.keyData.attemptsToFind}
+创建时间: ${formatDate(props.keyData.createdAt)}
+公钥长度: ${props.keyData.publicKeyArmored?.length || 0} 字符
+    `.trim()
+    alert(details)
+  }
 }
 </script>
 
 <style scoped>
 .key-card {
-  background: rgba(0, 0, 0, 0.5);
-  border: 1px solid;
+  background: #ffffff;
+  border: 1px solid #e0e0e0;
+  border-left: 4px solid;
   border-radius: 8px;
-  padding: 16px;
-  margin-bottom: 12px;
+  padding: 12px;
+  margin-bottom: 8px;
+  transition: all 0.3s ease;
+}
+
+@media (prefers-color-scheme: dark) {
+  .key-card {
+    background: #2a2a2a;
+    border-color: #333;
+  }
+}
+
+.key-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+@media (prefers-color-scheme: dark) {
+  .key-card:hover {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  }
 }
 
 .key-header {
   display: flex;
-  justify-content: space-between;
   align-items: center;
+  gap: 8px;
   margin-bottom: 8px;
 }
 
-.key-type {
-  font-size: 12px;
-  font-weight: bold;
+.pattern-badge {
+  padding: 2px 8px;
+  border-radius: 12px;
+  font-size: 11px;
+  font-weight: 600;
   text-transform: uppercase;
 }
 
-.key-time {
-  font-size: 11px;
-  color: rgba(255, 255, 255, 0.5);
+.match-text {
+  font-size: 12px;
+  color: #666;
+  font-weight: 500;
+}
+
+@media (prefers-color-scheme: dark) {
+  .match-text {
+    color: #ccc;
+  }
 }
 
 .key-fingerprint {
-  font-family: 'Courier New', monospace;
-  font-size: 14px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 13px;
+  color: #333;
   word-break: break-all;
   margin-bottom: 8px;
+  padding: 6px;
+  background: #f8f9fa;
+  border-radius: 4px;
 }
 
-.key-matched-text {
-  font-size: 12px;
-  color: rgba(255, 255, 255, 0.7);
+@media (prefers-color-scheme: dark) {
+  .key-fingerprint {
+    color: #f0f0f0;
+    background: #333;
+  }
+}
+
+.key-meta {
+  display: flex;
+  justify-content: space-between;
+  font-size: 11px;
+  color: #999;
   margin-bottom: 8px;
 }
 
-.key-stats {
-  font-size: 11px;
-  color: rgba(255, 255, 255, 0.5);
-  margin-bottom: 12px;
+@media (prefers-color-scheme: dark) {
+  .key-meta {
+    color: #777;
+  }
 }
 
 .key-actions {
   display: flex;
-  gap: 8px;
+  gap: 6px;
 }
 
-.copy-btn, .download-btn {
-  padding: 6px 12px;
-  background: rgba(255, 255, 255, 0.1);
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  border-radius: 4px;
-  color: rgba(255, 255, 255, 0.8);
+.ghost-btn {
+  background: transparent;
+  border: 1px solid transparent;
+  color: #9333ea;
+  padding: 4px 8px;
+  border-radius: 6px;
   cursor: pointer;
+  transition: all 0.3s ease;
+  font-weight: 500;
   font-size: 12px;
 }
 
-.copy-btn:hover, .download-btn:hover {
-  background: rgba(255, 255, 255, 0.2);
+.ghost-btn:hover {
+  background: rgba(147, 51, 234, 0.1);
+  border-color: rgba(147, 51, 234, 0.2);
+  transform: translateY(-1px);
+}
+
+@media (prefers-color-scheme: dark) {
+  .ghost-btn {
+    color: #d8b4fe;
+  }
+  .ghost-btn:hover {
+    background: rgba(147, 51, 234, 0.2);
+    border-color: rgba(147, 51, 234, 0.3);
+  }
+}
+
+.action-btn {
+  font-size: 12px;
+  padding: 4px 8px;
 }
 </style>

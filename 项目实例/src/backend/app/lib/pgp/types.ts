@@ -15,6 +15,7 @@ export interface MiningTask {
   stoppedAt?: Date;
   totalAttempts: number;
   matchesFound: number;
+  logicOperator?: 'AND' | 'OR'; // 筛选条件组合逻辑
 }
 
 export interface SpecialKey {
@@ -89,6 +90,7 @@ export interface MatchMessage {
   matchedText: string;
   color: string;
   attemptsToFind: number;
+  publicKeyArmored: string; // 添加公钥内容
 }
 
 export interface ErrorMessage {

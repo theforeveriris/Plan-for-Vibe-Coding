@@ -30,6 +30,7 @@ const PatternRuleSchema = z.object({
 const StartMinerSchema = z.object({
   patterns: z.array(PatternRuleSchema).min(1),
   threads: z.number().min(1).max(8).default(4),
+  logicOperator: z.enum(['AND', 'OR']).default('OR'),
 });
 
 export async function POST(request: NextRequest) {
@@ -39,7 +40,8 @@ export async function POST(request: NextRequest) {
 
     const taskId = await taskManager.startTask(
       data.patterns,
-      data.threads
+      data.threads,
+      data.logicOperator
     );
 
     return NextResponse.json({ success: true, taskId }, { headers: corsHeaders });

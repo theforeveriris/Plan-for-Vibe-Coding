@@ -5,15 +5,21 @@
       <div class="grid grid-cols-2 gap-4">
         <div class="bg-gray-900 rounded p-3">
           <div class="text-xs text-gray-400">总尝试次数</div>
-          <div class="text-xl font-bold text-white">{{ formatNumber(attempts) }}</div>
+          <div class="text-xl font-bold text-white">
+            <AnimatedNumber :value="attempts" />
+          </div>
         </div>
         <div class="bg-gray-900 rounded p-3">
           <div class="text-xs text-gray-400">发现数量</div>
-          <div class="text-xl font-bold text-matrix-green">{{ matches }}</div>
+          <div class="text-xl font-bold text-matrix-green">
+            <AnimatedNumber :value="matches" />
+          </div>
         </div>
         <div class="bg-gray-900 rounded p-3 col-span-2">
           <div class="text-xs text-gray-400">当前 Hashrate</div>
-          <div class="text-xl font-bold text-cyber-cyan">{{ hashrate.toFixed(1) }} keys/s</div>
+          <div class="text-xl font-bold text-cyber-cyan">
+            <AnimatedNumber :value="hashrate" :decimals="1" /> keys/s
+          </div>
         </div>
       </div>
     </div>
@@ -23,15 +29,21 @@
       <div class="grid grid-cols-2 gap-4">
         <div class="stat-card">
           <div class="stat-label">总尝试次数</div>
-          <div class="stat-value">{{ formatNumber(attempts) }}</div>
+          <div class="stat-value">
+            <AnimatedNumber :value="attempts" />
+          </div>
         </div>
         <div class="stat-card">
           <div class="stat-label">发现数量</div>
-          <div class="stat-value text-green">{{ matches }}</div>
+          <div class="stat-value text-green">
+            <AnimatedNumber :value="matches" />
+          </div>
         </div>
         <div class="stat-card">
           <div class="stat-label">当前 Hashrate</div>
-          <div class="stat-value text-cyan">{{ hashrate.toFixed(1) }} keys/s</div>
+          <div class="stat-value text-cyan">
+            <AnimatedNumber :value="hashrate" :decimals="1" /> keys/s
+          </div>
         </div>
         <div class="stat-card">
           <div class="stat-label">运行时间</div>
@@ -60,6 +72,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { useMinerStore } from '../stores/miner'
+import AnimatedNumber from './AnimatedNumber.vue'
 
 const props = defineProps<{
   mode?: 'simple' | 'detailed'
@@ -100,133 +113,230 @@ function formatDuration(seconds: number): string {
 
 <style scoped>
 .stats-panel {
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  font-family: Georgia, 'Times New Roman', Times, serif;
 }
 
 .stats-simple {
-  background: rgba(30, 41, 59, 0.8);
-  border: 1px solid rgba(148, 163, 184, 0.1);
-  border-radius: 12px;
-  padding: 16px;
-  backdrop-filter: blur(10px);
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+  background: #ffffff;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  padding: 12px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+}
+
+@media (prefers-color-scheme: dark) {
+  .stats-simple {
+    background: #2a2a2a;
+    border: 1px solid #333;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  }
 }
 
 .stats-simple .bg-gray-900 {
-  background: rgba(15, 23, 42, 0.8);
-  border: 1px solid rgba(148, 163, 184, 0.1);
-  border-radius: 10px;
-  padding: 12px;
-  transition: all 0.2s ease;
+  background: #f8f9fa;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  padding: 10px;
+  transition: all 0.3s ease;
+}
+
+@media (prefers-color-scheme: dark) {
+  .stats-simple .bg-gray-900 {
+    background: #333333;
+    border: 1px solid #444;
+  }
 }
 
 .stats-simple .bg-gray-900:hover {
-  border-color: rgba(59, 130, 246, 0.3);
+  border-color: #d8b4fe;
   transform: translateY(-1px);
-  box-shadow: 0 2px 8px rgba(59, 130, 246, 0.2);
+  box-shadow: 0 2px 8px rgba(147, 51, 234, 0.1);
+}
+
+@media (prefers-color-scheme: dark) {
+  .stats-simple .bg-gray-900:hover {
+    box-shadow: 0 2px 8px rgba(147, 51, 234, 0.2);
+  }
 }
 
 .stats-simple .text-xs {
-  font-size: 12px;
-  color: rgba(255, 255, 255, 0.6);
-  margin-bottom: 6px;
+  font-size: 11px;
+  color: #666666;
+  margin-bottom: 4px;
   font-weight: 500;
   text-transform: uppercase;
   letter-spacing: 0.5px;
+}
+
+@media (prefers-color-scheme: dark) {
+  .stats-simple .text-xs {
+    color: #cccccc;
+  }
 }
 
 .stats-simple .text-xl {
-  font-size: 20px;
+  font-size: 18px;
   font-weight: 700;
-  color: #ffffff;
+  color: #333333;
   line-height: 1.2;
 }
 
+@media (prefers-color-scheme: dark) {
+  .stats-simple .text-xl {
+    color: #f0f0f0;
+  }
+}
+
 .stats-simple .text-matrix-green {
-  color: #34d399;
-  text-shadow: 0 0 8px rgba(52, 211, 153, 0.4);
+  color: #16a34a;
+}
+
+@media (prefers-color-scheme: dark) {
+  .stats-simple .text-matrix-green {
+    color: #10b981;
+  }
 }
 
 .stats-simple .text-cyber-cyan {
-  color: #38bdf8;
-  text-shadow: 0 0 8px rgba(56, 189, 248, 0.4);
+  color: #9333ea;
+}
+
+@media (prefers-color-scheme: dark) {
+  .stats-simple .text-cyber-cyan {
+    color: #d8b4fe;
+  }
 }
 
 .stat-card {
-  background: rgba(30, 41, 59, 0.6);
-  border: 1px solid rgba(148, 163, 184, 0.1);
-  border-radius: 10px;
-  padding: 14px;
-  transition: all 0.2s ease;
+  background: #ffffff;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  padding: 12px;
+  transition: all 0.3s ease;
+}
+
+@media (prefers-color-scheme: dark) {
+  .stat-card {
+    background: #2a2a2a;
+    border: 1px solid #333;
+  }
 }
 
 .stat-card:hover {
-  border-color: rgba(59, 130, 246, 0.3);
+  border-color: #d8b4fe;
   transform: translateY(-1px);
-  box-shadow: 0 2px 8px rgba(59, 130, 246, 0.2);
+  box-shadow: 0 2px 8px rgba(147, 51, 234, 0.1);
+}
+
+@media (prefers-color-scheme: dark) {
+  .stat-card:hover {
+    box-shadow: 0 2px 8px rgba(147, 51, 234, 0.2);
+  }
 }
 
 .stat-label {
-  font-size: 12px;
-  color: rgba(255, 255, 255, 0.6);
-  margin-bottom: 6px;
+  font-size: 11px;
+  color: #666666;
+  margin-bottom: 4px;
   font-weight: 500;
   text-transform: uppercase;
   letter-spacing: 0.5px;
 }
 
+@media (prefers-color-scheme: dark) {
+  .stat-label {
+    color: #cccccc;
+  }
+}
+
 .stat-value {
-  font-size: 20px;
+  font-size: 18px;
   font-weight: 700;
-  color: #ffffff;
+  color: #333333;
   line-height: 1.2;
 }
 
+@media (prefers-color-scheme: dark) {
+  .stat-value {
+    color: #f0f0f0;
+  }
+}
+
 .stat-value.text-green {
-  color: #34d399;
-  text-shadow: 0 0 8px rgba(52, 211, 153, 0.4);
+  color: #16a34a;
+}
+
+@media (prefers-color-scheme: dark) {
+  .stat-value.text-green {
+    color: #10b981;
+  }
 }
 
 .stat-value.text-cyan {
-  color: #38bdf8;
-  text-shadow: 0 0 8px rgba(56, 189, 248, 0.4);
+  color: #9333ea;
+}
+
+@media (prefers-color-scheme: dark) {
+  .stat-value.text-cyan {
+    color: #d8b4fe;
+  }
 }
 
 .section-title {
-  font-size: 13px;
-  color: #3b82f6;
-  margin-bottom: 12px;
-  padding-bottom: 8px;
-  border-bottom: 1px solid rgba(59, 130, 246, 0.2);
+  font-size: 12px;
+  color: #9333ea;
+  margin-bottom: 10px;
+  padding-bottom: 6px;
+  border-bottom: 1px solid #e9d5ff;
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.5px;
 }
 
+@media (prefers-color-scheme: dark) {
+  .section-title {
+    color: #d8b4fe;
+    border-bottom: 1px solid rgba(147, 51, 234, 0.2);
+  }
+}
+
 .rules-stats {
-  background: rgba(30, 41, 59, 0.6);
-  border: 1px solid rgba(148, 163, 184, 0.1);
-  border-radius: 10px;
-  padding: 14px;
+  background: #ffffff;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  padding: 12px;
+}
+
+@media (prefers-color-scheme: dark) {
+  .rules-stats {
+    background: #2a2a2a;
+    border: 1px solid #333;
+  }
 }
 
 .rules-list {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 8px;
 }
 
 .rule-stat-item {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 8px 0;
-  border-bottom: 1px solid rgba(148, 163, 184, 0.05);
-  transition: all 0.2s ease;
+  padding: 6px 0;
+  border-bottom: 1px solid #e0e0e0;
+  transition: all 0.3s ease;
+}
+
+@media (prefers-color-scheme: dark) {
+  .rule-stat-item {
+    border-bottom: 1px solid #333;
+  }
 }
 
 .rule-stat-item:hover {
-  color: #3b82f6;
+  color: #9333ea;
 }
 
 .rule-stat-item:last-child {
@@ -234,38 +344,52 @@ function formatDuration(seconds: number): string {
 }
 
 .rule-type {
-  font-size: 13px;
-  color: rgba(255, 255, 255, 0.8);
+  font-size: 12px;
+  color: #333333;
   text-transform: capitalize;
   font-weight: 500;
 }
 
+@media (prefers-color-scheme: dark) {
+  .rule-type {
+    color: #f0f0f0;
+  }
+}
+
 .rule-count {
-  font-size: 13px;
-  color: #3b82f6;
+  font-size: 12px;
+  color: #9333ea;
   font-weight: 700;
-  background: rgba(59, 130, 246, 0.1);
-  padding: 2px 8px;
-  border-radius: 12px;
-  border: 1px solid rgba(59, 130, 246, 0.2);
+  background: #f5f3ff;
+  padding: 2px 6px;
+  border-radius: 10px;
+  border: 1px solid #e9d5ff;
+}
+
+@media (prefers-color-scheme: dark) {
+  .rule-count {
+    color: #d8b4fe;
+    background: rgba(147, 51, 234, 0.1);
+    border: 1px solid rgba(147, 51, 234, 0.2);
+  }
 }
 
 /* 响应式设计 */
 @media (max-width: 768px) {
   .stats-simple {
-    padding: 12px;
+    padding: 10px;
   }
   
   .stats-simple .text-xl {
-    font-size: 18px;
+    font-size: 16px;
   }
   
   .stat-card {
-    padding: 12px;
+    padding: 10px;
   }
   
   .stat-value {
-    font-size: 18px;
+    font-size: 16px;
   }
 }
 </style>

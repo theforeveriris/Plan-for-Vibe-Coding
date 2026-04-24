@@ -15,7 +15,7 @@ const getApiBase = (): string => {
   if (saved) return saved
 
   const hostname = window.location.hostname || 'localhost'
-  return `http://${hostname}:3002`
+  return `http://${hostname}:3001`
 }
 
 // 带超时的 fetch 封装
@@ -67,6 +67,7 @@ export const useMinerStore = defineStore('miner', () => {
   const maxSseReconnects = 10
   const sseConnectionState = ref<'connecting' | 'open' | 'closed' | 'error'>('closed')
   const lastHeartbeatTime = ref<number>(0)
+  const logicOperator = ref<'AND' | 'OR'>('OR') // 筛选条件组合逻辑
 
   // SSE 连接
   let sseConnection: EventSource | null = null
@@ -85,6 +86,11 @@ export const useMinerStore = defineStore('miner', () => {
 
   async function startMining(request: StartMinerRequest) {
     try {
+      // 保存逻辑运算符
+      if (request.logicOperator) {
+        logicOperator.value = request.logicOperator
+      }
+
       const response = await fetchWithTimeout(`${apiBase.value}/api/miner/start`, {
         method: 'POST',
         headers: {
@@ -355,7 +361,7 @@ export const useMinerStore = defineStore('miner', () => {
           matchPosition: 0,
           matchedText: message.matchedText,
           attemptsToFind: message.attemptsToFind,
-          publicKeyArmored: '',
+          publicKeyArmored: message.publicKeyArmored, // 保存公钥内容
           color: message.color,
           createdAt: new Date().toISOString(),
         }
@@ -401,6 +407,7 @@ export const useMinerStore = defineStore('miner', () => {
     apiBase,
     sseConnectionState,
     sseReconnectCount,
+    logicOperator,
     updateApiUrl,
     startMining,
     stopMining,
