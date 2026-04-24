@@ -1,62 +1,142 @@
 <template>
-  <div class="dashboard grid grid-cols-1 lg:grid-cols-3 gap-6">
-    <!-- 左侧控制面板 -->
-    <div class="lg:col-span-1 space-y-6">
-      <div class="bg-dark-card rounded-lg border border-gray-800 p-4">
-        <h2 class="text-xl font-semibold mb-4 text-cyber-cyan">控制面板</h2>
-        <MinerControl />
-      </div>
-      
-      <div class="bg-dark-card rounded-lg border border-gray-800 p-4">
-        <h2 class="text-xl font-semibold mb-4 text-cyber-cyan">统计面板</h2>
+  <div class="dashboard">
+    <!-- 主内容区 -->
+    <div class="dashboard-content">
+      <!-- 左侧面板 -->
+      <div class="left-panel">
+        <!-- 统计面板 -->
         <StatsPanel />
+
+        <!-- 控制面板 -->
+        <MinerControl />
+
+        <!-- 实时终端 + 已发现密钥（Tab切换） -->
+        <TabContainer
+          :tabs="[
+            { id: 'terminal', label: '实时终端' },
+            { id: 'keys', label: '已发现的特殊密钥' }
+          ]"
+          default-tab="terminal"
+          class="bottom-tab-container"
+        >
+          <template #default="{ activeTab }">
+            <div v-show="activeTab === 'terminal'" class="tab-panel">
+              <MinerTerminal />
+            </div>
+            <div v-show="activeTab === 'keys'" class="tab-panel">
+              <div class="keys-list" v-if="minerStore.matches.length > 0">
+                <KeyCard
+                  v-for="key in minerStore.matches"
+                  :key="key.id"
+                  :keyData="key"
+                />
+              </div>
+              <div v-else class="empty-state">
+                暂无特殊密钥
+              </div>
+            </div>
+          </template>
+        </TabContainer>
       </div>
-    </div>
-    
-    <!-- 右侧终端和密钥 -->
-    <div class="lg:col-span-2 space-y-6">
-      <div class="bg-dark-card rounded-lg border border-gray-800 p-4">
-        <h2 class="text-xl font-semibold mb-4 text-cyber-cyan">实时终端</h2>
-        <MinerTerminal />
-      </div>
-      
-      <div class="bg-dark-card rounded-lg border border-gray-800 p-4">
-        <h2 class="text-xl font-semibold mb-4 text-cyber-cyan">已发现的特殊密钥</h2>
-        <div v-if="keys.length === 0" class="text-gray-500 py-8">
-          还没有发现特殊密钥，开始挖掘吧！
-        </div>
-        <div v-else class="grid grid-cols-1 gap-4">
-          <KeyCard 
-            v-for="key in keys" 
-            :key="key.id" 
-            :key-data="key"
-          />
-        </div>
+
+      <!-- 右侧面板 -->
+      <div class="right-panel">
+        <!-- Hashrate 趋势 + 监控（Tab切换） -->
+        <TabContainer
+          :tabs="[
+            { id: 'chart', label: 'Hashrate 趋势' },
+            { id: 'monitor', label: 'Hashrate 监控' }
+          ]"
+          default-tab="chart"
+          class="top-tab-container"
+        >
+          <template #default="{ activeTab }">
+            <div v-show="activeTab === 'chart'" class="tab-panel">
+              <div class="chart-wrapper">
+                <HashrateChart />
+              </div>
+            </div>
+            <div v-show="activeTab === 'monitor'" class="tab-panel">
+              <StatsPanel mode="detailed" />
+            </div>
+          </template>
+        </TabContainer>
       </div>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { useMinerStore } from '../stores/miner'
+import StatsPanel from '../components/StatsPanel.vue'
 import MinerControl from '../components/MinerControl.vue'
 import MinerTerminal from '../components/MinerTerminal.vue'
-import StatsPanel from '../components/StatsPanel.vue'
+import HashrateChart from '../components/HashrateChart.vue'
 import KeyCard from '../components/KeyCard.vue'
-import { useKeysStore } from '../stores/keys'
-import type { SpecialKey } from '../types'
+import TabContainer from '../components/TabContainer.vue'
 
-const keysStore = useKeysStore()
-const keys = ref<SpecialKey[]>([])
-
-onMounted(async () => {
-  await keysStore.fetchKeys()
-  keys.value = keysStore.keys
-})
+const minerStore = useMinerStore()
 </script>
 
 <style scoped>
 .dashboard {
-  height: calc(100vh - 120px);
+  min-height: 100vh;
+  background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+  color: #fff;
+}
+
+.dashboard-content {
+  display: grid;
+  grid-template-columns: 400px 1fr;
+  gap: 24px;
+  padding: 24px;
+  height: calc(100vh - 80px);
+}
+
+.left-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  height: 100%;
+  overflow: hidden;
+}
+
+.right-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  height: 100%;
+  overflow: hidden;
+}
+
+.bottom-tab-container {
+  flex: 1;
+  min-height: 0;
+}
+
+.top-tab-container {
+  flex: 1;
+  min-height: 0;
+}
+
+.tab-panel {
+  height: 100%;
+  overflow: hidden;
+}
+
+.keys-list {
+  height: 100%;
+  overflow-y: auto;
+}
+
+.empty-state {
+  color: rgba(255, 255, 255, 0.5);
+  text-align: center;
+  padding: 40px 0;
+}
+
+.chart-wrapper {
+  height: 100%;
+  position: relative;
 }
 </style>

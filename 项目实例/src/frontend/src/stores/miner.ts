@@ -6,6 +6,7 @@ import type {
   SSEMessage,
   MiningTask,
   SpecialKey,
+  PatternRule,
 } from '../types'
 
 // 从 localStorage 加载 API URL，默认值为当前后端地址
@@ -59,7 +60,7 @@ export const useMinerStore = defineStore('miner', () => {
   const attempts = ref(0)
   const hashrate = ref(0)
   const matches = ref<SpecialKey[]>([])
-  const logs = ref<Array<{ time: Date; type: 'info' | 'match' | 'error'; message: string }>>([])
+  const logs = ref<Array<{ time: Date; type: 'info' | 'match' | 'error'; message: string; fingerprint?: string; color?: string }>>([])
   const hashrateHistory = ref<number[]>(Array(60).fill(0))
   const apiBase = ref(getApiBase())
   const sseReconnectCount = ref(0)
@@ -207,21 +208,15 @@ export const useMinerStore = defineStore('miner', () => {
         console.error(`[SSE] 连接错误 (状态: ${stateNames[currentState || 2] || 'UNKNOWN'})`, error)
 
         // 关键修复：区分初始连接错误和连接中断
-        // EventSource 在连接过程中会触发 onerror，这是正常的
-        // 只有在连接已打开后（状态为 OPEN 或已标记为 open）才应该重连
         if (sseConnectionState.value === 'open') {
-          // 连接已建立过，现在断开了，需要重连
           sseConnectionState.value = 'error'
           if (isRunning.value) {
             attemptReconnect(targetTaskId)
           }
         } else if (sseConnectionState.value === 'connecting') {
-          // 连接从未成功建立，可能是服务器错误或网络问题
-          // 给连接更多时间，不要立即重连
           console.log('[SSE] 初始连接失败，稍后重试...')
           sseConnectionState.value = 'error'
           if (isRunning.value) {
-            // 使用较长的延迟进行首次重连
             scheduleReconnect(targetTaskId, 3000)
           }
         }
@@ -350,7 +345,23 @@ export const useMinerStore = defineStore('miner', () => {
         break
 
       case 'match':
-        addLog('match', `发现特殊密钥: ${message.fingerprint}`)
+        // 添加到匹配列表
+        const newKey: SpecialKey = {
+          id: `${message.taskId}_${Date.now()}`,
+          taskId: message.taskId,
+          fingerprint: message.fingerprint,
+          patternType: message.patternType,
+          patternId: message.patternId,
+          matchPosition: 0,
+          matchedText: message.matchedText,
+          attemptsToFind: message.attemptsToFind,
+          publicKeyArmored: '',
+          color: message.color,
+          createdAt: new Date().toISOString(),
+        }
+        matches.value.unshift(newKey)
+
+        addLog('match', `发现特殊密钥: ${message.fingerprint} [${message.matchedText}]`, message.fingerprint, message.color)
         break
 
       case 'error':
@@ -365,8 +376,8 @@ export const useMinerStore = defineStore('miner', () => {
     }
   }
 
-  function addLog(type: 'info' | 'match' | 'error', message: string) {
-    logs.value.push({ time: new Date(), type, message })
+  function addLog(type: 'info' | 'match' | 'error', message: string, fingerprint?: string, color?: string) {
+    logs.value.push({ time: new Date(), type, message, fingerprint, color })
 
     // 限制日志数量
     if (logs.value.length > 100) {

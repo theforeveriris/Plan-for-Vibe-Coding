@@ -1,6 +1,6 @@
 // 任务管理器
 import { v4 as uuidv4 } from 'uuid';
-import type { MiningTask, PatternConfig, KeyPair, SSEMessage } from './pgp/types';
+import type { MiningTask, PatternRule, KeyPair, SSEMessage } from './pgp/types';
 import { createTask, updateTaskProgress, stopTask, getTask } from './db/queries';
 import { generateKeyPair } from './pgp/generator';
 import { matchesPattern } from './pgp/patterns';
@@ -25,13 +25,13 @@ class TaskManager {
     setInterval(() => this.cleanupTasks(), 60000);
   }
 
-  async startTask(pattern: PatternConfig, threads: number = 4): Promise<string> {
+  async startTask(patterns: PatternRule[], threads: number = 4): Promise<string> {
     const taskId = uuidv4();
     
     const task: MiningTask = {
       id: taskId,
       status: 'running',
-      pattern,
+      patterns,
       threads,
       startedAt: new Date(),
       totalAttempts: 0,
@@ -43,17 +43,17 @@ class TaskManager {
     this.tasks.set(taskId, task);
     this.sseClients.set(taskId, new Set());
 
-    console.log(`[TaskManager] 任务已创建: taskId=${taskId}, pattern=${pattern.type}, threads=${threads}`);
+    console.log(`[TaskManager] 任务已创建: taskId=${taskId}, patterns=${patterns.length}, threads=${threads}`);
 
     // 启动 Worker（在主线程中运行）
     for (let i = 0; i < threads; i++) {
-      this.startWorker(taskId, pattern);
+      this.startWorker(taskId, patterns);
     }
 
     return taskId;
   }
 
-  private startWorker(taskId: string, pattern: PatternConfig) {
+  private startWorker(taskId: string, patterns: PatternRule[]) {
     const workerId = `${taskId}_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
     
     const workerInfo: WorkerInfo = {
@@ -75,10 +75,10 @@ class TaskManager {
             batchAttempts++;
             workerInfo.attempts++;
             
-            const matchResult = matchesPattern(keyPair.fingerprint, pattern);
+            const matchResult = matchesPattern(keyPair.fingerprint, patterns);
             
             if (matchResult.matched) {
-              this.handleMatch(taskId, keyPair, workerInfo.attempts);
+              this.handleMatch(taskId, keyPair, matchResult, workerInfo.attempts);
             }
           }
           
@@ -138,18 +138,24 @@ class TaskManager {
     }
   }
 
-  private handleMatch(taskId: string, key: KeyPair, attempts: number) {
+  private handleMatch(taskId: string, key: KeyPair, matchResult: { position: number; matchedText: string; patternId: string; color: string }, attempts: number) {
     const task = this.tasks.get(taskId);
     if (task) {
       task.matchesFound++;
       this.tasks.set(taskId, task);
+
+      // 获取匹配的规则信息
+      const matchedRule = task.patterns.find(p => p.id === matchResult.patternId);
 
       // 发送匹配消息
       const message: SSEMessage = {
         type: 'match',
         taskId,
         fingerprint: key.fingerprint,
-        patternType: task.pattern.type,
+        patternType: matchedRule?.type || 'unknown',
+        patternId: matchResult.patternId,
+        matchedText: matchResult.matchedText,
+        color: matchResult.color,
         attemptsToFind: attempts,
       };
 

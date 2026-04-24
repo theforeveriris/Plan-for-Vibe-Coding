@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { taskManager } from '../../../lib/task-manager';
 import { initDatabase } from '../../../lib/db/schema';
+import type { PatternRule } from '../../../lib/pgp/types';
 
 // 初始化数据库
 initDatabase();
@@ -14,13 +15,20 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'Content-Type',
 };
 
-const StartMinerSchema = z.object({
-  patternType: z.enum(['consecutive', 'repeating', 'palindrome', 'special_date', 'custom_regex', 'leading_zeros']),
-  patternConfig: z.object({
+const PatternRuleSchema = z.object({
+  id: z.string(),
+  type: z.enum(['consecutive', 'repeating', 'palindrome', 'special_date', 'custom_regex', 'leading_zeros']),
+  params: z.object({
     minLength: z.number().optional(),
     pattern: z.string().optional(),
     zeroCount: z.number().optional(),
   }),
+  color: z.string().default('#00f0ff'),
+  enabled: z.boolean().default(true),
+});
+
+const StartMinerSchema = z.object({
+  patterns: z.array(PatternRuleSchema).min(1),
   threads: z.number().min(1).max(8).default(4),
 });
 
@@ -30,10 +38,7 @@ export async function POST(request: NextRequest) {
     const data = StartMinerSchema.parse(body);
 
     const taskId = await taskManager.startTask(
-      {
-        type: data.patternType,
-        params: data.patternConfig,
-      },
+      data.patterns,
       data.threads
     );
 
