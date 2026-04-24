@@ -220,6 +220,7 @@ function stopMining() {
   border: 1px solid rgba(0, 240, 255, 0.3);
   border-radius: 8px;
   padding: 16px;
+  overflow-y: auto;
 }
 
 .control-header {

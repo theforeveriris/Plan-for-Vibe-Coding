@@ -27,6 +27,8 @@
 | T007 | SQLite存储 | 2026-04-24 | 实现了密钥元数据存储 |
 | T014 | UI标签页优化 | 2026-04-25 | 实现TabContainer组件，重构Dashboard布局 |
 | T015 | Chart.js错误修复 | 2026-04-25 | 修复RangeError和TypeError |
+| T016 | Dashboard布局重构 | 2026-04-25 | 合并控制面板/终端/密钥到单个TabContainer |
+| T017 | 布局Bug修复 | 2026-04-25 | 修复TabContainer挤压问题和MinerControl滚动问题 |
 
 ## 归档规则
 - 完成的任务 7 天后移动到 `archive/` 目录
@@ -39,5 +41,5 @@ Sprint 1: 完成核心挖掘功能（T001, T002, T003）
 Sprint 2: 完成前端界面和存储功能（T004, T005, T006, T007）
 - ✅ 已完成
 
-Sprint 3: UI优化与稳定性提升（T014, T015）
+Sprint 3: UI优化与稳定性提升（T014, T015, T016, T017）
 - ✅ 已完成

@@ -6,17 +6,21 @@
 - 新增 `TabContainer` 组件（`src/frontend/src/components/TabContainer.vue`）
   - 支持标签切换动画和激活状态样式
   - 使用 scoped slot 传递 `activeTab` 状态给子内容
-  - 用于组织实时终端/已发现密钥、Hashrate趋势/监控面板
+  - 用于组织控制面板/实时终端/已发现密钥、Hashrate趋势/监控面板
 
 ### [ Changed ]
 - 重构 `Dashboard.vue` 布局，使用 TabContainer 组件：
-  - 实时终端 + 已发现的特殊密钥 → 合并为标签页容器
-  - Hashrate 趋势 + Hashrate 监控 → 合并为标签页容器
+  - 控制面板 + 实时终端 + 已发现的特殊密钥 → 合并为单个标签页容器（左侧面板）
+  - Hashrate 趋势 + Hashrate 监控 → 合并为标签页容器（右侧面板）
 - 优化 `StatsPanel.vue`，支持详细模式显示规则统计信息
 - 增强 `MinerTerminal.vue`，每条记录显示密钥指纹
 - 增强 `KeyCard.vue`，支持按规则类型高亮显示
 
 ### [ Fixed ]
+- 修复 `Dashboard.vue` 布局问题 - TabContainer 被挤压导致不可见
+  - 为 `left-panel` 子元素设置正确的 flex 属性：`flex-shrink: 0` / `flex: 1; min-height: 0`
+- 修复 `MinerControl.vue` 无法滚动问题
+  - 添加 `overflow-y: auto` 使规则列表超出时可滚动
 - 修复 Chart.js `RangeError: Maximum call stack size exceeded` 错误
   - 移除 `deep: true` 的 watcher，避免无限递归
   - 使用 `update('none')` 替代默认更新模式

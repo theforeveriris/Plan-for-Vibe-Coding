@@ -7,19 +7,20 @@
         <!-- 统计面板 -->
         <StatsPanel />
 
-        <!-- 控制面板 -->
-        <MinerControl />
-
-        <!-- 实时终端 + 已发现密钥（Tab切换） -->
+        <!-- 控制面板 + 实时终端 + 已发现密钥（Tab切换） -->
         <TabContainer
           :tabs="[
+            { id: 'control', label: '控制面板' },
             { id: 'terminal', label: '实时终端' },
             { id: 'keys', label: '已发现的特殊密钥' }
           ]"
-          default-tab="terminal"
-          class="bottom-tab-container"
+          default-tab="control"
+          class="main-tab-container"
         >
           <template #default="{ activeTab }">
+            <div v-show="activeTab === 'control'" class="tab-panel">
+              <MinerControl />
+            </div>
             <div v-show="activeTab === 'terminal'" class="tab-panel">
               <MinerTerminal />
             </div>
@@ -101,6 +102,16 @@ const minerStore = useMinerStore()
   overflow: hidden;
 }
 
+.left-panel > :nth-child(1) {
+  flex-shrink: 0;
+}
+
+.left-panel > :nth-child(2) {
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+}
+
 .right-panel {
   display: flex;
   flex-direction: column;
@@ -109,9 +120,15 @@ const minerStore = useMinerStore()
   overflow: hidden;
 }
 
-.bottom-tab-container {
+.main-tab-container {
   flex: 1;
   min-height: 0;
+}
+
+.main-tab-container .tab-panel {
+  height: 100%;
+  overflow-y: auto;
+  overflow-x: hidden;
 }
 
 .top-tab-container {
