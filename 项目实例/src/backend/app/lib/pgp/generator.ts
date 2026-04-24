@@ -3,16 +3,17 @@ import * as openpgp from 'openpgp';
 import type { KeyPair } from './types';
 
 /**
- * 生成 PGP 密钥对
+ * 生成 PGP 密钥对（使用 ECC 曲线，比 RSA 快 10-50 倍）
  * @returns 包含公钥、私钥和指纹的密钥对
  */
 export async function generateKeyPair(): Promise<KeyPair> {
   try {
     const { privateKey, publicKey } = await openpgp.generateKey({
-      type: 'rsa',
-      rsaBits: 2048,
+      type: 'ecc',
+      curve: 'curve25519',
       userIDs: [{ name: 'PGP Vanity Miner', email: 'miner@localhost' }],
       passphrase: '', // 无密码，便于自动化
+      format: 'armored',
     });
 
     // 读取公钥以获取指纹

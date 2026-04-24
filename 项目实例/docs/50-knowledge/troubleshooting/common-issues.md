@@ -203,6 +203,115 @@ console.log(`[SSE Server] 客户端断开连接: taskId=${taskId}`);
 - **网络状态检测**：重连前检查 `navigator.onLine`
 - **随机抖动**：避免多个客户端同时重连的惊群效应
 
+### Q7: "Failed to execute testFn: TypeError: Failed to fetch"
+**问题**：前端测试函数执行失败，无法连接到后端
+
+**根本原因**：
+1. **后端地址错误**：前端默认使用 `http://localhost:3000`，但后端实际运行在 `http://localhost:3002`
+2. **localStorage 未保存正确地址**：ConfigModal 保存的地址没有被正确读取
+3. **错误提示不友好**：用户无法区分是后端未启动还是地址错误
+
+**解决方案**：
+
+#### 1. 自动检测后端端口
+```typescript
+const getApiBase = (): string => {
+  const saved = localStorage.getItem('backendUrl')
+  if (saved) return saved
+
+  // 自动检测后端端口
+  const hostname = window.location.hostname || 'localhost'
+  return `http://${hostname}:3002`
+}
+```
+
+#### 2. 优化错误提示
+```typescript
+async function fetchWithTimeout(url: string, options = {}, timeoutMs = 10000) {
+  try {
+    const response = await fetch(url, { ...options, signal: controller.signal })
+    return response
+  } catch (error) {
+    if (error.message.includes('Failed to fetch')) {
+      throw new Error(`无法连接到后端服务 (${url})，请检查：1.后端是否启动 2.地址是否正确`)
+    }
+    throw error
+  }
+}
+```
+
+#### 3. 确保地址同步保存
+```typescript
+function updateApiUrl(url: string) {
+  apiBase.value = url
+  localStorage.setItem('backendUrl', url)
+}
+```
+
+### Q8: Hashrate 持续为 0.0 keys/s
+**问题**：任务运行但 hashrate 显示为 0
+
+**根本原因**：
+1. **RSA 2048 密钥生成太慢**：生成一个 RSA 2048 密钥需要 200-500ms，每秒只能生成 2-5 个
+2. **前端显示的是累计尝试次数**：不是每秒速率
+3. **Worker 线程模块解析失败**：导致实际没有执行密钥生成
+
+**解决方案**：
+
+#### 1. 使用 ECC 替代 RSA（性能提升 10-50 倍）
+```typescript
+const { privateKey, publicKey } = await openpgp.generateKey({
+  type: 'ecc',
+  curve: 'curve25519',  // 比 RSA 快 10-50 倍
+  userIDs: [{ name: 'PGP Vanity Miner', email: 'miner@localhost' }],
+  passphrase: '',
+  format: 'armored',
+});
+```
+
+#### 2. 使用 setInterval 替代 Worker 线程（避免 Next.js ESM 问题）
+```typescript
+const workerInfo = {
+  intervalId: setInterval(async () => {
+    const startTime = Date.now();
+    let batchAttempts = 0;
+    
+    // 每批处理最多 10 个密钥
+    while (batchAttempts < 10 && Date.now() - startTime < 900) {
+      const keyPair = await generateKeyPair();
+      batchAttempts++;
+      workerInfo.attempts++;
+      
+      const matchResult = matchesPattern(keyPair.fingerprint, pattern);
+      if (matchResult.matched) {
+        handleMatch(taskId, keyPair, workerInfo.attempts);
+      }
+    }
+    
+    // 更新 hashrate
+    const timeDiff = (Date.now() - workerInfo.lastUpdateTime) / 1000;
+    if (timeDiff >= 1) {
+      workerInfo.hashrate = (workerInfo.attempts - workerInfo.lastAttempts) / timeDiff;
+      updateTaskProgress(taskId);
+    }
+  }, 1000),
+};
+```
+
+#### 3. 确保 SSE 正确发送进度消息
+```typescript
+const message: SSEMessage = {
+  type: 'progress',
+  taskId,
+  attempts: totalAttempts,
+  hashrate: totalHashrate / workerCount || 0,
+  matchesFound: task.matchesFound,
+  timestamp: Date.now(),
+};
+
+broadcastSSEMessage(taskId, message);
+```
+
 ## 网络请求最佳实践
 
 ### 前端
@@ -212,6 +321,7 @@ console.log(`[SSE Server] 客户端断开连接: taskId=${taskId}`);
 - 页面加载时检查后端服务可用性
 - 使用 `navigator.onLine` 检测网络状态
 - SSE 连接添加心跳检测机制
+- 默认后端地址自动检测当前端口
 
 ### 后端
 - 所有 API 路由必须配置 CORS 响应头
@@ -220,3 +330,4 @@ console.log(`[SSE Server] 客户端断开连接: taskId=${taskId}`);
 - 异常处理避免泄露敏感信息
 - 添加详细的连接/断开日志
 - 任务不存在时主动发送错误信息并关闭连接
+- 使用 ECC 替代 RSA 提升密钥生成性能

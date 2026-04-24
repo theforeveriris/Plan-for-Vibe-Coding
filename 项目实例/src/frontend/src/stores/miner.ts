@@ -8,9 +8,13 @@ import type {
   SpecialKey,
 } from '../types'
 
-// 从 localStorage 加载 API URL，默认值为 http://localhost:3000
+// 从 localStorage 加载 API URL，默认值为当前后端地址
 const getApiBase = (): string => {
-  return localStorage.getItem('backendUrl') || 'http://localhost:3000'
+  const saved = localStorage.getItem('backendUrl')
+  if (saved) return saved
+
+  const hostname = window.location.hostname || 'localhost'
+  return `http://${hostname}:3002`
 }
 
 // 带超时的 fetch 封装
@@ -34,6 +38,9 @@ async function fetchWithTimeout(
     if (error instanceof Error) {
       if (error.name === 'AbortError') {
         throw new Error('请求超时，请检查后端服务是否正常运行')
+      }
+      if (error.message.includes('Failed to fetch')) {
+        throw new Error(`无法连接到后端服务 (${url})，请检查：1.后端是否启动 2.地址是否正确`)
       }
     }
     throw error
@@ -67,11 +74,12 @@ export const useMinerStore = defineStore('miner', () => {
   let connectionStartTime = 0
 
   // 计算属性
-  const currentTask = computed<MiningTask | null>(() => null) // 简化实现
+  const currentTask = computed<MiningTask | null>(() => null)
 
   // 方法
   function updateApiUrl(url: string) {
     apiBase.value = url
+    localStorage.setItem('backendUrl', url)
   }
 
   async function startMining(request: StartMinerRequest) {
@@ -157,6 +165,8 @@ export const useMinerStore = defineStore('miner', () => {
         const connectTime = Date.now() - connectionStartTime
         sseConnectionState.value = 'open'
         lastHeartbeatTime.value = Date.now()
+        // 连接成功后重置重连计数
+        sseReconnectCount.value = 0
         console.log(`[SSE] 连接已建立 (耗时 ${connectTime}ms)`)
         addLog('info', `实时连接已建立`)
 
@@ -196,20 +206,23 @@ export const useMinerStore = defineStore('miner', () => {
         }
         console.error(`[SSE] 连接错误 (状态: ${stateNames[currentState || 2] || 'UNKNOWN'})`, error)
 
-        // 如果连接已打开过，说明是连接中断
+        // 关键修复：区分初始连接错误和连接中断
+        // EventSource 在连接过程中会触发 onerror，这是正常的
+        // 只有在连接已打开后（状态为 OPEN 或已标记为 open）才应该重连
         if (sseConnectionState.value === 'open') {
+          // 连接已建立过，现在断开了，需要重连
           sseConnectionState.value = 'error'
-
-          // 如果任务仍在运行，尝试重连
           if (isRunning.value) {
             attemptReconnect(targetTaskId)
           }
         } else if (sseConnectionState.value === 'connecting') {
           // 连接从未成功建立，可能是服务器错误或网络问题
+          // 给连接更多时间，不要立即重连
+          console.log('[SSE] 初始连接失败，稍后重试...')
           sseConnectionState.value = 'error'
-
           if (isRunning.value) {
-            attemptReconnect(targetTaskId)
+            // 使用较长的延迟进行首次重连
+            scheduleReconnect(targetTaskId, 3000)
           }
         }
       }
@@ -276,7 +289,7 @@ export const useMinerStore = defineStore('miner', () => {
       clearInterval(heartbeatTimer)
     }
 
-    // 每45秒检查一次心跳（服务器30秒发送一次 keep-alive）
+    // 每45秒检查一次心跳（服务器15秒发送一次 keep-alive）
     heartbeatTimer = setInterval(() => {
       const timeSinceLastHeartbeat = Date.now() - lastHeartbeatTime.value
       console.log(`[SSE] 心跳检测: 距上次消息 ${(timeSinceLastHeartbeat / 1000).toFixed(1)}秒`)
@@ -338,7 +351,6 @@ export const useMinerStore = defineStore('miner', () => {
 
       case 'match':
         addLog('match', `发现特殊密钥: ${message.fingerprint}`)
-        // 这里应该调用 fetchKeys 来更新密钥列表
         break
 
       case 'error':

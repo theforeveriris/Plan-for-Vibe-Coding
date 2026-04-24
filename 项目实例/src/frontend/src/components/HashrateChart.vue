@@ -26,7 +26,7 @@ onMounted(() => {
           labels: Array(60).fill(''),
           datasets: [{
             label: 'Hashrate (keys/s)',
-            data: Array(60).fill(0),
+            data: [...minerStore.hashrateHistory],
             borderColor: '#00f0ff',
             backgroundColor: 'rgba(0, 240, 255, 0.1)',
             borderWidth: 2,
@@ -38,9 +38,13 @@ onMounted(() => {
         options: {
           responsive: true,
           maintainAspectRatio: false,
+          animation: false,
           scales: {
             x: {
-              display: false
+              display: false,
+              grid: {
+                display: false
+              }
             },
             y: {
               beginAtZero: true,
@@ -55,6 +59,9 @@ onMounted(() => {
           plugins: {
             legend: {
               display: false
+            },
+            tooltip: {
+              enabled: false
             }
           }
         }
@@ -63,21 +70,23 @@ onMounted(() => {
   }
 })
 
-// 监听 hashrate 历史数据
+// 监听 hashrate 历史数据 - 使用浅监听避免无限递归
 watch(
   () => minerStore.hashrateHistory,
   (newHistory) => {
     if (chart.value) {
-      chart.value.data.datasets[0].data = newHistory
-      chart.value.update()
+      // 直接修改数据并调用 update('none') 避免动画
+      chart.value.data.datasets[0].data = [...newHistory]
+      chart.value.update('none')
     }
   },
-  { deep: true }
+  { deep: false }
 )
 
 onUnmounted(() => {
   if (chart.value) {
     chart.value.destroy()
+    chart.value = null
   }
 })
 </script>

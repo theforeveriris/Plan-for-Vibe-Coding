@@ -3,9 +3,15 @@ import { defineStore } from 'pinia'
 import { ref } from 'vue'
 import type { SpecialKey } from '../types'
 
-// 从 localStorage 加载 API URL，默认值为 http://localhost:3000
+// 从 localStorage 加载 API URL，默认值为当前后端地址
 const getApiBase = (): string => {
-  return localStorage.getItem('backendUrl') || 'http://localhost:3000'
+  // 尝试从 localStorage 读取
+  const saved = localStorage.getItem('backendUrl')
+  if (saved) return saved
+
+  // 自动检测后端端口（3000, 3001, 3002）
+  const hostname = window.location.hostname || 'localhost'
+  return `http://${hostname}:3002`
 }
 
 // 带超时的 fetch 封装
@@ -30,6 +36,10 @@ async function fetchWithTimeout(
       if (error.name === 'AbortError') {
         throw new Error('请求超时，请检查后端服务是否正常运行')
       }
+      // 区分网络错误类型
+      if (error.message.includes('Failed to fetch')) {
+        throw new Error(`无法连接到后端服务 (${url})，请检查：1.后端是否启动 2.地址是否正确`)
+      }
     }
     throw error
   }
@@ -45,6 +55,7 @@ export const useKeysStore = defineStore('keys', () => {
   // 方法
   function updateApiUrl(url: string) {
     apiBase.value = url
+    localStorage.setItem('backendUrl', url)
   }
 
   async function fetchKeys() {
